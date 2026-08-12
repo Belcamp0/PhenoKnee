@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PhenoKnee — cut planning</title>
+<meta name="author" content="Saulius Brazauskas">
+<meta name="description" content="A calculator for checking that planned and executed bony resections agree in knee arthroplasty. Not a medical device.">
+<meta name="robots" content="noindex">
+<style>
+:root{
+  --teal:#0F6E56; --drape:#E1F5EE; --teal-pale:#9FE1CB;
+  --ink:#2C2C2A; --bone:#888780; --mist:#F1EFE8; --surface:#fff; --border:#E4E2DA;
+  --within:#639922; --within-bg:#EAF3DE; --within-tx:#173404;
+  --edge:#EF9F27; --edge-bg:#FAEEDA; --edge-tx:#412402;
+  --outside:#E24B4A; --outside-bg:#FCEBEB; --outside-tx:#501313;
+  --split:#7F77DD; --split-bg:#EEEDFE; --split-tx:#26215C;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--mist);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{max-width:520px;margin:0 auto;background:var(--surface);min-height:100vh}
+.bar{background:var(--teal);color:var(--drape);
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:36px;height:36px;flex:0 0 auto;border-radius:11px}
+.bar .t{font-size:17px;font-weight:500;letter-spacing:-0.2px}
+.bar .s{font-size:13px;color:var(--teal-pale)}
+.lang{display:flex;gap:4px}
+.lang button{font:inherit;font-size:13px;padding:8px 12px;min-height:36px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.3);background:transparent;color:var(--teal-pale);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--drape);color:var(--teal);border-color:var(--drape)}
+nav{display:flex;border-bottom:.5px solid var(--border)}
+nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav button{flex:0 0 auto;padding-left:14px;padding-right:14px;font:inherit;font-size:13px;padding-top:12px;padding-bottom:12px;min-height:48px;white-space:nowrap;
+  border:0;border-bottom:2px solid transparent;background:transparent;color:var(--bone);cursor:pointer}
+nav button[aria-selected="true"]{color:var(--teal);border-bottom-color:var(--teal);font-weight:500}
+section{display:none;padding:16px}
+section.on{display:block}
+h2{font-size:13px;font-weight:400;color:var(--bone);margin:20px 0 8px}
+section h2:first-child{margin-top:0}
+.fld{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:10px 0;border-bottom:.5px solid var(--border);font-size:15px}
+.fld input{font:inherit;font-family:var(--mono);font-size:17px;width:96px;text-align:right;
+  padding:10px 12px;min-height:44px;border:.5px solid var(--border);border-radius:8px;background:var(--surface)}
+.fld .hint{display:block;font-size:12px;color:var(--bone)}
+.seg{display:flex;gap:6px;margin:2px 0 14px}
+.seg button{flex:1;font:inherit;font-size:14px;min-height:46px;border-radius:8px;
+  border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px}
+#strats{position:sticky;top:0;z-index:4;background:var(--surface);
+  padding-top:10px;margin-top:-10px;box-shadow:0 6px 8px -8px rgba(0,0,0,.25)}
+nav::after{content:"";position:sticky;right:0;flex:0 0 18px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),var(--surface));pointer-events:none}
+h2{letter-spacing:.01em}
+section{padding-bottom:26px}
+.strip button{flex:0 0 auto;font:inherit;font-size:14px;min-height:46px;padding:0 15px;border-radius:8px;
+  border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer;white-space:nowrap}
+.strip button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.chips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.chip{font-size:12px;padding:5px 10px;border-radius:20px;background:var(--mist);color:var(--bone)}
+.chip b{font-weight:500;color:var(--ink);font-family:var(--mono)}
+#patstrats button{display:flex;flex-direction:column;align-items:center;gap:1px;
+  min-height:52px;padding:7px 14px;line-height:1.2}
+#patstrats .tiny{font-size:10px;opacity:.7}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:400;color:var(--bone);text-align:right;padding:7px 0;
+  border-bottom:.5px solid var(--border)}
+th:first-child{text-align:left}
+td{padding:10px 0;border-bottom:.5px solid var(--border);font-size:14px;text-align:right}
+td:first-child{text-align:left}
+td.n{font-family:var(--mono)}
+.delta{font-size:11px;color:var(--bone);display:block;font-family:var(--mono)}
+.warnbox{border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.5;margin:10px 0}
+.w-edge{background:var(--edge-bg);color:var(--edge-tx)}
+.w-bad{background:var(--outside-bg);color:var(--outside-tx)}
+.w-info{background:var(--split-bg);color:var(--split-tx)}
+.w-ok{background:var(--within-bg);color:var(--within-tx)}
+svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;margin-bottom:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--bone);margin-bottom:16px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:14px;height:8px;border-radius:2px;display:inline-block}
+.plan-card{border:.5px solid var(--border);border-radius:12px;padding:14px;margin-top:6px}
+.plan-card h3{font-size:15px;font-weight:500;margin:0 0 2px}
+.plan-card .sub{font-size:12px;color:var(--bone);margin:0 0 10px}
+.plan-card ol{font-size:13px;line-height:1.6;padding-left:20px;margin:0}
+.plan-card li{margin-bottom:8px}
+.grid3{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:1px;background:var(--border);
+  border-radius:10px;overflow:hidden;font-size:12px}
+.grid3 div{background:var(--surface);padding:9px 8px;line-height:1.35}
+.grid3 .hd{background:var(--mist);color:var(--bone);font-size:11px;text-align:center}
+.grid3 .rh{background:var(--mist);color:var(--bone);font-size:11px;display:flex;align-items:center}
+.grid3 .cell.ok{background:var(--within-bg);color:var(--within-tx)}
+.dis{font-size:12px;color:var(--bone);padding:16px 0 8px;border-top:.5px solid var(--border);margin-top:20px}
+.lede{font-size:13px;color:var(--bone);line-height:1.55;margin:0 0 14px}
+.head{font-size:22px;font-weight:500;line-height:1.3;margin:0 0 6px}
+.pbody{font-size:16px;line-height:1.7;margin:0 0 12px}
+#p-svg{display:block;margin-bottom:8px}
+.case{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:12px 0;border-bottom:.5px solid var(--border);font-size:14px}
+.case .meta{font-size:12px;color:var(--bone)}
+.case .num{font-family:var(--mono);font-size:14px}
+.logempty{color:var(--bone);font-size:14px;padding:22px 0;text-align:center}
+.mcell{display:flex;justify-content:flex-end}
+.mcell input{font:inherit;font-family:var(--mono);font-size:16px;width:72px;text-align:right;
+  padding:8px 10px;min-height:44px;border:.5px solid var(--border);border-radius:8px;background:var(--surface)}
+.ck{padding:11px 0;border-bottom:.5px solid var(--border)}
+.ck>span{display:block;font-size:14px;margin-bottom:8px;line-height:1.4}
+.ck .yn{display:flex;gap:8px}
+.ck .yn button{flex:1;font:inherit;font-size:15px;min-height:46px;border-radius:8px;
+  border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer}
+.ck .yn button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.ck .yn button.no[aria-pressed="true"]{background:var(--outside);border-color:var(--outside);color:#fff}
+.pickfile{display:block;text-align:center;padding:22px 16px;border:1.5px dashed var(--border);
+  border-radius:12px;color:var(--bone);font-size:15px;cursor:pointer;margin:14px 0}
+.pickfile:hover{border-color:var(--teal);color:var(--teal)}
+.cwrap{position:relative;background:#151412;border-radius:12px;overflow:hidden;margin-bottom:12px}
+#cv{display:block;width:100%;touch-action:none;cursor:crosshair}
+.loupe{position:absolute;width:132px;height:132px;border-radius:50%;
+  border:2px solid var(--teal);box-shadow:0 2px 10px rgba(0,0,0,.4);pointer-events:none}
+.stepnow{background:var(--teal);color:var(--drape);border-radius:10px;padding:11px 13px;
+  font-size:14px;line-height:1.45;margin-bottom:10px}
+.stepnow b{display:block;font-size:12px;color:var(--teal-pale);font-weight:400;margin-bottom:2px}
+.lmk{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.lmk span{font-size:11px;padding:5px 9px;border-radius:20px;background:var(--mist);color:var(--bone)}
+.lmk span.done{background:var(--within-bg);color:var(--within-tx)}
+.btnrow{display:flex;gap:10px;margin-bottom:12px}
+.btnrow>*{flex:1;margin-top:0}
+.cta2{width:100%;font:inherit;background:var(--teal);color:var(--drape);text-align:center;
+  padding:14px;min-height:50px;border:0;border-radius:10px;font-size:15px;cursor:pointer;margin-top:12px}
+.zoomrow{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.zlab{font-size:13px;color:var(--bone);flex:0 0 auto}
+.zval{font-size:13px;color:var(--bone);font-family:var(--mono);flex:0 0 auto;min-width:44px;text-align:right}
+.zrange{flex:1;margin:0;height:40px}
+.zrange::-webkit-slider-thumb{width:24px;height:24px;margin-top:-9px}
+.zrange::-moz-range-thumb{width:24px;height:24px}
+.viewrow{display:flex;gap:10px;margin-bottom:10px}
+.viewrow .vseg{flex:1;margin:0}
+.stitle{font-size:13px;font-weight:400;color:var(--bone);margin:22px 0 6px}
+.study{border:.5px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px}
+.study .jr{font-size:11px;color:var(--bone);letter-spacing:.02em}
+.study h4{font-size:15px;font-weight:500;margin:2px 0 6px;line-height:1.3}
+.study p{font-size:13px;line-height:1.55;margin:0 0 8px;color:var(--ink)}
+.study .fig{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.study .fig span{font-size:12px;font-family:var(--mono);background:var(--mist);
+  color:var(--ink);padding:4px 9px;border-radius:20px}
+.study .acts{display:flex;gap:8px}
+.study .acts a,.study .acts button{flex:1;font:inherit;font-size:13px;min-height:42px;
+  border-radius:8px;border:.5px solid var(--border);background:var(--surface);
+  color:var(--teal);cursor:pointer;text-decoration:none;display:flex;
+  align-items:center;justify-content:center;gap:6px}
+.study .acts button.done{background:var(--within-bg);color:var(--within-tx);border-color:var(--within-bg)}
+.verdict{font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block;margin-bottom:6px}
+.v-yes{background:var(--within-bg);color:var(--within-tx)}
+.v-partial{background:var(--edge-bg);color:var(--edge-tx)}
+.v-no{background:var(--mist);color:var(--bone)}
+.thc{border:.5px solid var(--border);border-radius:12px;padding:12px 14px 4px;margin-bottom:10px}
+.thh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.tht{font-size:12px;color:var(--bone)}
+.tht b{font-family:var(--mono);color:var(--ink);font-weight:500}
+.thv{display:flex;align-items:baseline;gap:10px;margin:2px 0 0}
+.thv .big{font-size:30px;font-weight:500;font-family:var(--mono);line-height:1.15}
+.thv .big.within{color:var(--within-tx)} .thv .big.edge{color:var(--edge-tx)}
+.thv .big.bad{color:var(--outside-tx)} .thv .big.idle{color:var(--bone)}
+.thd{font-size:14px;font-family:var(--mono);color:var(--bone);flex:1}
+.thr{margin:0}
+.thc{touch-action:pan-y}
+.alignsl{background:var(--mist);border-radius:14px;padding:14px 16px 12px;margin:0 0 16px}
+.ahead{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.aabbr{font-size:34px;font-weight:600;letter-spacing:-0.5px;color:var(--teal);
+  line-height:1;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.anames{display:flex;flex-direction:column;min-width:0}
+.afull{font-size:14px;font-weight:500;color:var(--ink);line-height:1.25}
+.aplain{font-size:12.5px;color:var(--bone);line-height:1.3}
+.props{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.prop{flex:1 1 45%;min-width:180px;border-radius:12px;padding:12px 14px}
+.prop.good{background:var(--within-bg)}
+.prop.care{background:var(--edge-bg)}
+.prop h4{margin:0 0 6px;font-size:12px;font-weight:500;letter-spacing:.02em}
+.prop.good h4{color:var(--within-tx)} .prop.care h4{color:var(--edge-tx)}
+.prop ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.5}
+.prop.good ul{color:var(--within-tx)} .prop.care ul{color:var(--edge-tx)}
+.prop li{margin-bottom:5px}
+.prop li:last-child{margin-bottom:0}
+.aticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--bone);margin-top:2px}
+.alt{width:100%;font:inherit;font-size:13px;min-height:44px;margin-top:12px;
+  border:.5px solid var(--border);border-radius:8px;background:var(--surface);
+  color:var(--teal);cursor:pointer}
+.alt[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.about{background:var(--drape);border-radius:14px;padding:15px 16px;margin:4px 0 20px}
+.about p{margin:0 0 8px;font-size:13px;line-height:1.55;color:#14503F}
+.about p:last-child{margin:0}
+.about .lead{font-size:15px;font-weight:500;line-height:1.4;color:var(--teal)}
+.about .small{font-size:12px;color:#4A7566}
+.cred{padding:20px 16px calc(24px + env(safe-area-inset-bottom));
+  border-top:.5px solid var(--border);background:var(--mist)}
+.cred .who{margin:0;font-size:12px;color:var(--ink)}
+.cred .dis2{margin:3px 0 0;font-size:12px;color:var(--bone);line-height:1.45}
+.fold{border:.5px solid var(--border);border-radius:12px;margin:10px 0 16px;overflow:hidden}
+.fold>summary{list-style:none;cursor:pointer;padding:14px 16px;font-size:14px;color:var(--teal);
+  display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:"+";font-size:19px;color:var(--bone);line-height:1}
+.fold[open]>summary::after{content:"\2212"}
+.fold[open]>summary{border-bottom:.5px solid var(--border)}
+.foldbody{padding:14px 16px 4px}
+.mlist{margin:0;padding-left:17px;font-size:12.5px;line-height:1.55;color:var(--bone)}
+.mlist li{margin-bottom:8px}
+.tibfold{margin:14px 0 4px}
+.tibfold>summary{color:var(--ink)}
+.foldsum{font-size:12px;color:var(--bone);font-family:var(--mono);margin-left:auto;margin-right:10px}
+.tibfold .wear:last-child{border-bottom:0}
+.foldbody .dis{border-top:0;padding-top:4px;margin-top:8px}
+.blade-row{display:flex;align-items:center;gap:12px;margin:6px 0 4px}
+.blade-row .seg{margin:0;flex:0 0 auto}
+.blade-row .seg button{padding:0 16px;min-height:42px}
+.blade-row .note{font-size:12px;color:var(--bone);line-height:1.4}
+.cpwrap{background:var(--mist);border-radius:14px;padding:14px;margin:4px 0 10px}
+.cpwrap .chip{background:var(--surface);border:.5px solid var(--border)}
+#cpgrid{display:block;width:100%}
+.splitlab{margin:12px 0 6px;font-size:12px;color:var(--bone)}
+.splitbar{display:flex;height:10px;gap:3px}
+.splitbar div{border-radius:5px;transition:width .25s}
+#cp-bony{background:var(--teal)}
+#cp-intra{background:var(--split)}
+.lim2{display:flex;justify-content:space-between;font-size:12px;color:var(--bone);margin-top:6px}
+#cpsens .warnbox{margin:12px 0 0}
+.wear{padding:11px 0;border-bottom:.5px solid var(--border)}
+.wear>span{display:block;font-size:15px;margin-bottom:8px}
+.wear .steps{display:flex;gap:6px}
+.wear .steps button{flex:1;font:inherit;font-family:var(--mono);font-size:16px;min-height:46px;
+  border-radius:8px;border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer}
+.wear .steps button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.sldr{padding:12px 0 10px;border-bottom:.5px solid var(--border)}
+.sldr .top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px}
+.sldr .top input{font:inherit;font-family:var(--mono);font-size:17px;width:92px;text-align:right;
+  padding:9px 11px;min-height:44px;border:.5px solid var(--border);border-radius:8px;background:var(--surface)}
+.sldr .hint{display:block;font-size:12px;color:var(--bone)}
+.sldr .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--bone);margin-top:4px}
+.sldr .ticks span:nth-child(3){font-family:var(--mono)}
+input.range{-webkit-appearance:none;appearance:none;width:100%;height:48px;margin:6px 0 0;
+  background:transparent;cursor:pointer;display:block;touch-action:pan-y}
+input.range:focus{outline:none}
+input.range:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:8px}
+input.range::-webkit-slider-runnable-track{height:6px;border-radius:3px;
+  background:linear-gradient(90deg,var(--mist) 0 100%)}
+input.range::-moz-range-track{height:6px;border-radius:3px;background:var(--mist)}
+input.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:28px;height:28px;border-radius:50%;background:var(--teal);border:3px solid var(--surface);
+  box-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:-11px}
+input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--teal);
+  border:3px solid var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="bar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" rx="11" fill="#E1F5EE"/>
+      <line x1="20" y1="6" x2="20" y2="34" stroke="#0F6E56" stroke-width="1" stroke-opacity=".38" stroke-dasharray="2.4 2.6"/>
+      <line x1="22.39" y1="21" x2="13.41" y2="19" stroke="#0F6E56" stroke-width="1.5" stroke-opacity=".75" stroke-linecap="round"/>
+      <line x1="22.35" y1="18.84" x2="13.45" y2="21.16" stroke="#0F6E56" stroke-width="1.5" stroke-opacity=".75" stroke-linecap="round"/>
+      <path d="M20 7.6 L17.9 20 L20 32.4" fill="none" stroke="#0F6E56" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="20" cy="7.6" r="2.5" fill="#0F6E56"/>
+      <circle cx="20" cy="32.4" r="2.5" fill="#0F6E56"/>
+      <circle cx="17.9" cy="20" r="3.4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="2"/>
+    </svg>
+    <div><div class="t">PhenoKnee</div><div class="s" data-i="hd">Cut planning</div></div>
+  </div>
+  <div class="lang" role="group" aria-label="Language">
+    <button data-lang="en" aria-pressed="true">EN</button>
+    <button data-lang="lt" aria-pressed="false">LT</button>
+  </div>
+</div>
+
+<nav role="tablist">
+  <button role="tab" data-tab="case" aria-selected="true" data-i="nav.case">Case</button>
+  <button role="tab" data-tab="plan" aria-selected="false" data-i="nav.plan">Cuts</button>
+  <button role="tab" data-tab="thea" aria-selected="false" data-i="nav.thea">Theatre</button>
+  <button role="tab" data-tab="pat" aria-selected="false" data-i="nav.pat">Patient</button>
+  <button role="tab" data-tab="log" aria-selected="false" data-i="nav.log">Log</button>
+</nav>
+
+<section id="s-case" class="on">
+  <div class="about">
+    <p class="lead" data-i="ab.lead">A calculator for checking that the bony resections you plan and the ones you execute agree.</p>
+    <p data-i="ab.body">Enter the leg parameters and it works out the resection depth for each cut under each alignment strategy. Enter what you measured with the caliper in theatre and it shows where the two diverge, and by how much.</p>
+    <p class="small" data-i="ab.limit">It computes geometry from the figures you give it. It does not measure the knee, choose a strategy, or judge whether a plan is right for a patient.</p>
+  </div>
+
+  <h2 data-i="c.step1">1 · Side and implant</h2>
+  <div class="seg">
+    <button data-side="right" aria-pressed="true" data-i="c.right">Right</button>
+    <button data-side="left" aria-pressed="false" data-i="c.left">Left</button>
+  </div>
+  <p class="lede" data-i="c.impl">Implant — MicroPort Evolution MP</p>
+  <div class="strip" id="sizes"></div>
+  <div class="chips" id="implchips"></div>
+  <p class="lede" id="bladenote"></p>
+  <h2 data-i="c.step2">2 · Leg parameters</h2>
+  <div class="sldr">
+    <div class="top"><label for="i-ldfa">LDFA<span class="hint" data-i="c.ldfaH">Mechanical, to bone contour</span></label>
+      <input id="i-ldfa" type="number" step="0.1" value="87.0" inputmode="decimal"></div>
+    <input id="r-ldfa" class="range" type="range" min="80" max="98" step="0.1" value="87.0"
+      aria-label="LDFA">
+    <div class="ticks"><span>80</span><span data-i="c.valgusF">valgus femur</span><span>90</span><span data-i="c.varusF">varus femur</span><span>98</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-mpta">MPTA<span class="hint" data-i="c.mptaH">Mechanical, to bone contour</span></label>
+      <input id="i-mpta" type="number" step="0.1" value="84.5" inputmode="decimal"></div>
+    <input id="r-mpta" class="range" type="range" min="78" max="96" step="0.1" value="84.5"
+      aria-label="MPTA">
+    <div class="ticks"><span>78</span><span data-i="c.varusT">varus tibia</span><span>90</span><span data-i="c.valgusT">valgus tibia</span><span>96</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-hka"><span data-i="c.hka">Measured HKA</span><span class="hint" data-i="c.hkaH">Negative = varus</span></label>
+      <input id="i-hka" type="number" step="0.1" value="-7.0" inputmode="decimal"></div>
+    <input id="r-hka" class="range" type="range" min="-20" max="20" step="0.1" value="-7.0" aria-label="HKA">
+    <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
+      <input id="i-slope" type="number" step="0.1" value="7.0" inputmode="decimal"></div>
+    <input id="r-slope" class="range" type="range" min="0" max="16" step="0.1" value="7.0" aria-label="Tibial slope">
+    <div class="ticks"><span>0</span><span data-i="c.flat">flat</span><span>8</span><span data-i="c.steep">steep</span><span>16</span></div>
+  </div>
+  <details class="fold" id="measfold">
+    <summary data-i="m.open">Measure from a radiograph instead</summary>
+    <div class="foldbody">
+
+  <div class="warnbox w-edge" data-i="m.privacy">The image stays in this browser. It is never uploaded, never stored, and is discarded when you reload. Use an exported JPEG or PNG rather than a DICOM file, and crop out any patient banner before you open it.</div>
+  <div class="warnbox w-info" data-i="m.manual">You place every landmark yourself. The app only does the trigonometry — it does not find anatomy for you.</div>
+
+  <label class="pickfile" for="img-in"><span data-i="m.pick">Choose a standing long-leg radiograph</span></label>
+  <input id="img-in" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">
+
+  <div id="canvaswrap" class="cwrap hidden">
+    <canvas id="cv"></canvas>
+    <canvas id="loupe" class="loupe hidden"></canvas>
+  </div>
+
+  <div id="stepnow" class="stepnow hidden"></div>
+  <div id="landmarks" class="lmk hidden"></div>
+
+  <div class="btnrow hidden" id="measbtns">
+    <button class="ghost" id="btn-undo" data-i="m.undo">Undo point</button>
+    <button class="ghost" id="btn-reset" data-i="m.resetpts">Start over</button>
+  </div>
+
+  <div id="measout" class="hidden">
+    <h2 data-i="m.results">Measured angles</h2>
+    <table><tbody id="mtbl"></tbody></table>
+    <button class="cta2" id="btn-apply" data-i="m.apply">Use these values in the plan</button>
+  </div>
+  <div class="dis" data-i="m.dis">Trigonometry on landmarks you placed. Not an automatic measurement, not a medical device, not for clinical decision-making.</div>
+
+    </div>
+  </details>
+
+  <h2 data-i="cp.h">Phenotype — CPAK</h2>
+  <div class="cpwrap">
+    <div class="chips" id="cpchips" style="margin-bottom:10px"></div>
+    <svg id="cpgrid" viewBox="0 0 340 262" role="img" aria-label="CPAK grid"></svg>
+    <p class="splitlab" data-i="cp.split">Deformity split</p>
+    <div class="splitbar"><div id="cp-bony"></div><div id="cp-intra"></div></div>
+    <div class="lim2"><span id="cp-bonyL"></span><span id="cp-intraL"></span></div>
+    <div id="cpsens"></div>
+  </div>
+
+  <h2 data-i="c.step3">3 · Wear</h2>
+  <div class="wear" data-w="dm"><span data-i="c.dfm">Distal femur, medial</span><div class="steps"></div></div>
+  <div class="wear" data-w="dl"><span data-i="c.dfl">Distal femur, lateral</span><div class="steps"></div></div>
+  <div class="wear" data-w="pm"><span data-i="c.pfm">Posterior femur, posteromedial</span><div class="steps"></div></div>
+  <div class="wear" data-w="pl"><span data-i="c.pfl">Posterior femur, posterolateral</span><div class="steps"></div></div>
+  <details class="fold tibfold">
+    <summary>
+      <span data-i="c.tibwear">Tibial wear</span>
+      <span class="foldsum" id="tibsum"></span>
+    </summary>
+    <div class="foldbody">
+      <div class="wear" data-w="tm"><span data-i="c.tm">Tibia, medial</span><div class="steps"></div></div>
+      <div class="wear" data-w="tl"><span data-i="c.tl">Tibia, lateral</span><div class="steps"></div></div>
+    </div>
+  </details>
+  <div id="rotnote"></div>
+  <p class="lede" data-i="c.wearNote">Bone wear on the distal and posterior femur is not compensated for — it is reported as negligible even in advanced arthritis. Only cartilage is added back.</p>
+  <div class="dis" data-i="d.def">Geometric simulation based on values you entered. Not a medical device. Not for clinical decision-making.</div>
+</section>
+
+<section id="s-plan">
+  <div class="strip" id="strats"></div>
+  <div class="chips" id="planchips"></div>
+  <div class="viewrow">
+    <div class="seg vseg" role="group">
+      <button data-view="ml" aria-pressed="true" data-i="v.ml">M / L</button>
+      <button data-view="ap" aria-pressed="false" data-i="v.ap">A / P</button>
+    </div>
+    <div class="seg vseg" role="group">
+      <button data-blade="1" aria-pressed="true" data-i="v.blade">Blade</button>
+    </div>
+    <div class="seg vseg" id="compseg" role="group" style="display:none">
+      <button data-comp="med" aria-pressed="true" data-i="v.med">Medial</button>
+      <button data-comp="lat" aria-pressed="false" data-i="v.lat">Lateral</button>
+    </div>
+  </div>
+  <div class="zoomrow">
+    <span class="zlab" data-i="v.zoom">Zoom</span>
+    <input id="r-zoom" class="range zrange" type="range" min="0.8" max="2.4" step="0.05"
+      value="1.3" aria-label="Zoom">
+    <span class="zval" id="zoomval">1.3×</span>
+  </div>
+  <svg class="plan" id="fig" viewBox="0 0 360 344" role="img" aria-label="Cut plan"></svg>
+  <div class="legend">
+    <span><i class="sw" style="background:#CFCBBC"></i><span data-i="lg.bone">Bone</span></span>
+    <span><i class="sw" style="background:#4E92B8"></i><span data-i="lg.cart">Cartilage</span></span>
+    <span><i class="sw" style="background:repeating-linear-gradient(45deg,#7F77DD 0 2px,#EEEDFE 2px 5px)"></i><span data-i="lg.def">Deficit</span></span>
+    <span><i class="sw" style="background:#E24B4A;opacity:.4"></i><span data-i="lg.res">Resected</span></span>
+    <span><i class="sw" style="background:#0F6E56"></i><span data-i="lg.cut">Cut plane</span></span>
+    <span id="lg-blade"><i class="sw" style="background:#0F6E56"></i><span data-i="lg.blade">Blade slot</span></span>
+    <span><i class="sw" style="background:#888780"></i><span data-i="lg.mech">Mechanical axis</span></span>
+  </div>
+  <h2 data-i="p.tbl">Resection depths</h2>
+  <table><thead><tr>
+    <th data-i="p.cut">Cut</th><th data-i="p.med">Medial</th><th data-i="p.lat">Lateral</th><th data-i="p.diff">Diff</th>
+  </tr></thead><tbody id="cuts"></tbody></table>
+  <p class="lede" style="margin-top:8px" data-i="p.note">Upper figure is the guide depth from the articular surface. Smaller figure is the bone slab you will measure with a caliper, once the saw blade thickness is taken off.</p>
+  <div id="planwarn"></div>
+  <details class="fold">
+    <summary data-i="mt.open">Method and assumptions</summary>
+    <div class="foldbody"><ul class="mlist" id="methodlist"></ul></div>
+  </details>
+  <h2 data-i="p.how">Executing this with Evolution instrumentation</h2>
+  <div class="plan-card" id="howto"></div>
+  <div class="dis" data-i="d.def">Geometric simulation based on values you entered. Not a medical device. Not for clinical decision-making.</div>
+</section>
+
+<!-- ================= THEATRE ================= -->
+<section id="s-thea">
+  <p class="lede" data-i="th.lede">Targets come from the plan you built. Measure each resection with a caliper and enter what you actually removed. The bone slab is thinner than the guide depth by the thickness of the saw blade.</p>
+  <p class="lede" id="thbladenote"></p>
+  <div class="chips" id="theachips"></div>
+  <div id="theatbl"></div>
+  <h2 data-i="th.checks">Confirmations</h2>
+  <div id="theachecks"></div>
+  <div id="theasum"></div>
+  <details class="fold">
+    <summary data-i="g.open">If the trial gaps do not match</summary>
+    <div class="foldbody">
+
+  <p class="lede" data-i="g.lede">Published corrective options for the Evolution medial-pivot system when trial gaps do not match. Reproduced as reference — the app does not select a step for you.</p>
+  <div class="grid3" id="gapgrid"></div>
+  <div class="warnbox w-info" style="margin-top:14px" data-i="g.slope">The tibial resection crosshead sits at 3° of posterior slope when its vertical axis is parallel to the tibial axis. For an anatomically sloped resection, the guide is adjusted until the cutting slot matches the native slope. Resecting markedly more slope than native is the reported mechanism of posterior subsidence and posterior edge wear.</div>
+  <div class="warnbox w-info" data-i="g.rot">The 4-in-1 block preparation holes give 3° of external rotation off the posterior condylar axis, or none through the 0° holes. Kinematic technique uses the 0° holes, since posterior condylar wear is usually slight. In severe varus or valgus the posterior condylar axis may be unreliable, and rotation is set against the AP axis or the epicondyles.</div>
+  <div class="dis" data-i="d.tree">Summary of published surgical technique. Not a recommendation.</div>
+
+    </div>
+  </details>
+
+  <button class="cta2" id="btn-save" data-i="th.save">Save case to log</button>
+  <div class="dis" data-i="th.dis">Arithmetic comparison of values you entered. Not for clinical decision-making.</div>
+</section>
+
+<!-- ================= LOG ================= -->
+<section id="s-log">
+  <div class="warnbox w-edge" data-i="lg.warn">Cases are held in this browser only. Download your file to keep them safely.</div>
+  <div id="logstats" class="chips"></div>
+  <div id="loglist"></div>
+  <div class="btnrow">
+    <button class="ghost" id="btn-export" data-i="lg.export">Download file</button>
+    <button class="ghost" id="btn-import" data-i="lg.import">Load file</button>
+  </div>
+  <input id="file-log" type="file" accept="application/json" class="hidden">
+  <div class="dis" data-i="lg.dis">Descriptive summary of your own entered data. No clinical recommendation.</div>
+</section>
+
+<!-- ================= PATIENT ================= -->
+<section id="s-pat">
+  <div class="alignsl">
+    <div class="ahead">
+      <span class="aabbr" id="pa-abbr">—</span>
+      <div class="anames">
+        <span class="afull" id="pa-full"></span>
+        <span class="aplain" id="pa-name"></span>
+      </div>
+    </div>
+    <input id="r-align" class="range" type="range" min="0" max="3" step="1" value="3"
+      aria-label="How much the leg is straightened">
+    <div class="aticks">
+      <span data-i="pa.left">Straightened</span>
+      <span data-i="pa.right">Left as built</span>
+    </div>
+    <button id="btn-ika" class="alt" data-i="pa.ika">Or: balanced to fit during surgery</button>
+  </div>
+  <p class="head" id="p-head">—</p>
+  <svg id="p-svg" width="100%" viewBox="0 0 320 300" role="img" aria-label="Leg alignment"></svg>
+  <p class="pbody" data-i="pv.b1">This is how your leg has been built since you stopped growing. It is not damage, and it is not unusual — a great many people are shaped this way.</p>
+  <p class="pbody" data-i="pv.b2">The plan is to rebuild the joint close to the shape you already have, rather than force the leg perfectly straight.</p>
+  <p class="pbody" id="p-lead"></p>
+  <div class="props">
+    <div class="prop good"><h4 data-i="pa.pros">What it offers</h4><ul id="pa-pros"></ul></div>
+    <div class="prop care"><h4 data-i="pa.cons">What to watch</h4><ul id="pa-cons"></ul></div>
+  </div>
+  <h2 class="stitle" data-i="ev.h">What the studies show</h2>
+  <p class="lede" data-i="ev.lede">Trials comparing these approaches. Some found a benefit, some found none — that disagreement is the honest state of the evidence, and it is shown here rather than hidden.</p>
+  <div id="studies"></div>
+
+  <p class="pbody" data-i="pv.b3">People often worry the leg will still look bowed afterwards. In one study of knees replaced this way, most patients described their leg as bowed beforehand, and every one of them described it as straight after surgery.</p>
+</section>
+
+  <footer class="cred">
+    <p class="who" data-i="cr.by">Created by Saulius Brazauskas, 2026</p>
+    <p class="dis2" data-i="cr.dis">A geometric calculator. It does not imply or replace medical judgement.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===== MicroPort Evolution MP, CS femoral components =====
+   Posterior condylar thickness per the surgical technique: 10 mm sizes 1-4,
+   11 mm sizes 5-8. Distal condylar thickness 9 mm across the range.
+   Saw blade 1.27 mm. Inserts 10, 12, 14, 17, 20, 24 mm.
+   Distal resection guides 10, 12, 14 mm. Valgus bushing 3, 5, 7 degrees.
+   VERIFY against the current technique guide before clinical use. */
+const EVO={ sizes:[1,2,3,4,5,6,7,8],
+  ml:{1:59,2:61,3:64,4:66,5:70,6:73,7:77,8:80},
+  post:{1:10,2:10,3:10,4:10,5:11,6:11,7:11,8:11},
+  // Anteroposterior dimension per size, from the implant dimensions table.
+  ap:{1:51,2:54,3:57,4:60,5:64,6:68,7:72,8:76},
+    // 0.050 inch saw blade, the thickness the Evolution resection slots are
+  // designed for. Kept exact rather than rounded, because it is subtracted
+  // from every resection and the rounding compounds.
+  distal:9, blade:1.27, baseplate:3, insertThk:10 };
+/* Span between medial and lateral condylar reference points. Sets how many
+   millimetres of differential resection one degree of correction costs.
+   Approximations - review before clinical use. */
+/* Distance between the points where each resection is measured. These set how
+   many millimetres of differential resection one degree of correction costs,
+   so they scale every number the planner produces.
+     FEMUR_SPAN   condylar contact points, inboard of the 59-80 mm ML width
+     TIBIA_SPAN   compartment centres, roughly beneath the femoral condyles
+     TIBIA_REF    guide reference depth from the more prominent plateau
+   Review these against your own measurement habit: if you caliper the tibia at
+   the base of the spines rather than at the compartment centres, the span is
+   far shorter and the differential correspondingly smaller. */
+const FEMUR_SPAN=46, TIBIA_SPAN=44, TIBIA_REF=10;
+/* Distance between the posterior condylar contact points. A difference in
+   posterior cartilage wear across this span reads as component rotation. */
+const POSTERIOR_SPAN=52;
+const WEAR_STEPS=[0,1,2,3,4];
+
+const LT={
+ "hd":"Pjūvių planavimas","nav.case":"Atvejis","nav.plan":"Pjūviai","nav.gaps":"Tarpai",
+ "c.side":"Pusė","c.right":"Dešinys","c.left":"Kairys",
+ "c.impl":"Implantas – MicroPort Evolution MP","c.params":"Kojos parametrai",
+ "c.ldfaH":"Mechaninis, iki kaulo kontūro","c.mptaH":"Mechaninis, iki kaulo kontūro",
+ "c.hka":"Išmatuotas HKA","c.hkaH":"Neigiamas = varus",
+ "c.slope":"Natūralus blauzdikaulio nuolydis","c.slopeH":"Kreiptuvas duoda 3°, jei nenustatytas anatominis",
+ "c.pfm":"Užpakalinis šlaunikaulis, posteromedialinis",
+ "c.pfl":"Užpakalinis šlaunikaulis, posterolateralinis",
+ "w.rot":"Užpakalinio nudilimo skirtumas {d} mm atitinka apie {a}° rotacijos. Atremiant kreiptuvą į nudilusius užpakalinius krumplius komponentas atsiduria santykinėje {dir} rotacijoje.",
+ "w.rotInt":"vidinėje","w.rotExt":"išorinėje",
+ "nav.thea":"Operacinė","nav.log":"Žurnalas","nav.pat":"Pacientui","nav.gaps":"Info",
+ "ev.h":"K\u0105 rodo tyrimai","ev.read":"Skaityti straipsn\u012F","ev.share":"Dalintis","ev.copied":"Nukopijuota",
+ "ev.yes":"Nustatyta nauda","ev.partial":"Nedidel\u0117 nauda","ev.no":"Skirtumo nerasta",
+ "ev.lede":"Tyrimai, lygin\u0119 \u0161iuos b\u016Bdus. Vieni nustat\u0117 naud\u0105, kiti \u2013 ne. Toks nesutarimas yra s\u0105\u017Eininga \u012Frodym\u0173 b\u016Bkl\u0117, tod\u0117l jis rodomas, o ne sl\u0117piamas.",
+ "th.bladeOn":"Tikslai \u2013 kaulo plok\u0161tel\u0117, kuri\u0105 galite i\u0161matuoti kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis.",
+ "th.bladeOff":"Tikslai \u2013 gylis, kuriam nustatytas kreiptuvas, prie\u0161 a\u0161men\u0173 pj\u016Bv\u012F.",
+ "m.open":"Arba i\u0161matuoti i\u0161 rentgenogramos",
+ "g.open":"Jei bandomieji tarpai nesutampa",
+ "c.step1":"1 \u00b7 Pus\u0117 ir implantas","c.step2":"2 \u00b7 Kojos parametrai","c.step3":"3 \u00b7 Nudilimas",
+ "ab.lead":"Skai\u010Diuokl\u0117, skirta patikrinti, ar suplanuotos ir atliktos kaulo rezekcijos sutampa.",
+ "ab.body":"\u012Eveskite kojos parametrus \u2013 programa apskai\u010Diuos kiekvieno pj\u016Bvio rezekcijos gyl\u012F pagal kiekvien\u0105 a\u0161ies atstatymo strategij\u0105. \u012Eveskite, k\u0105 i\u0161matavote kaliperiu operacin\u0117je, ir ji parodys, kur ir kiek jos i\u0161siskiria.",
+ "ab.limit":"Ji skai\u010Diuoja geometrij\u0105 pagal j\u016Bs\u0173 pateiktus duomenis. Ji nematuoja kelio, nepasirenka strategijos ir nevertina, ar planas tinka pacientui.",
+ "c.tibwear":"Blauzdikaulio nudilimas","c.medshort":"med.","c.latshort":"lat.",
+ "mt.open":"Metodas ir prielaidos",
+ "mt.span":"Vienas korekcijos laipsnis ver\u010Diamas milimetrais per prielaidas: {f} mm \u0161launikaulio ir {tb} mm blauzdikaulio matavimo plot\u012F. Jei blauzdikaul\u012F matuojate ties an\u010Diuk\u0173 pagrindu, o ne skyri\u0173 centruose, tikrasis plotis ma\u017Eesnis, tod\u0117l ir skirtumas ma\u017Eesnis.",
+ "mt.post":"U\u017Epakalinis nudilimas ver\u010Diamas rotacija per {v} mm u\u017Epakalini\u0173 krumpli\u0173 plot\u012F.",
+ "mt.ref":"Blauzdikaulio gylis atskaitomas {v} mm nuo prominenti\u0161kesn\u0117s pus\u0117s, pagal kreiptuvo konvencij\u0105.",
+ "mt.blade":"A\u0161men\u0173 storis {v} mm, atimamas po kart\u0105 kiekvienam pj\u016Bviui.",
+ "mt.cart":"Kremzl\u0117 pie\u0161iama {f} mm \u0161launikaulyje ir {tb} mm blauzdikaulyje. Technikoje kompensuojama 2 mm ten, kur nudilta iki kaulo \u2013 tai atskira reik\u0161m\u0117.",
+ "mt.sign":"\u017Denkl\u0173 konvencija: aHKA = MPTA at\u0117mus LDFA, neigiamas \u2013 varus. Prie\u0161 remiantis rezultatais patikrinkite su trimis rentgenogramomis, kuri\u0173 reik\u0161m\u0117s \u017Einomos.",
+ "ab.ma":"MAA","ab.ama":"kMAA","ab.rka":"rKAA","ab.ka":"KAA","ab.ika":"aKAA",
+ "pa.pros":"K\u0105 duoda","pa.cons":"\u012E k\u0105 atkreipti d\u0117mes\u012F",
+ "pn.ma1":"Dešimtme\u010Di\u0173 i\u0161gyvenamumo duomenys",
+ "pn.ma2":"Atkartojama su bet kuriuo standartiniu instrument\u0173 rinkiniu",
+ "pn.ma3":"Komponent\u0173 pad\u0117tis nuspėjama ir lengvai patikrinama",
+ "cn.ma1":"Daugumai varus keli\u0173 balansui reikia minkšt\u0173j\u0173 audini\u0173 atpalaidavimo",
+ "cn.ma2":"S\u0105nario linija nutolinama nuo formos, su kuria pacientas u\u017Eaugo",
+ "cn.ma3":"Keliuose tyrimuose s\u0105nario jutimas prastesnis nei taikant asmeninius metodus",
+ "pn.ama1":"Ma\u017Eiau atpalaidavimo nei visiškai mechaninėje a\u0161yje",
+ "pn.ama2":"Abu komponentai lieka \u012Fprastose saugiose ribose",
+ "cn.ama1":"Vis tiek i\u0161taisoma didesnioji deformacijos dalis",
+ "cn.ama2":"Ma\u017Eiausiai tirtas i\u0161 vainikin\u0117s plok\u0161tumos b\u016Bd\u0173",
+ "pn.rka1":"Atkuria did\u017Ei\u0105j\u0105 nat\u016Bralios formos dal\u012F, bet riboja kra\u0161tutinumus",
+ "pn.rka2":"Geriausiai tyrimais pagr\u012Fstas i\u0161 asmenini\u0173 b\u016Bd\u0173",
+ "pn.rka3":"\u012Emanoma su rankiniais instrumentais, roboto nereikia",
+ "cn.rka1":"Dauguma artrozini\u0173 keli\u0173 nepatenka \u012F saug\u0173 diapazon\u0105, tod\u0117l korekcijos vis tiek reikia",
+ "cn.rka2":"Rib\u0173 reik\u0161m\u0117s yra susitarimas, o ne i\u0161matuota riba",
+ "pn.ka1":"Atkuria s\u0105nario linijas, kurias kelis tur\u0117jo iki artrozės",
+ "pn.ka2":"Paprastai subalansuojama neatpalaiduojant \u0161onini\u0173 rai\u0161\u010Di\u0173",
+ "pn.ka3":"Auk\u0161\u010Diausi s\u0105nario jutimo rodikliai keliuose atsitiktin\u0117s imties tyrimuose",
+ "cn.ka1":"Komponentas gali likti u\u017E klasikini\u0173 a\u0161ies rib\u0173",
+ "cn.ka2":"Po 10 ir 13 met\u0173 tyrimai nerodo pranašumo prie\u0161 mechanin\u0119 a\u0161\u012F",
+ "pn.ika1":"Pirmiausia atkuriamas blauzdikaulis, tada \u0161launikaulis derinamas prie tarp\u0173",
+ "pn.ika2":"Ma\u017Eiau priklauso nuo radiologini\u0173 matavim\u0173",
+ "cn.ika1":"Galutin\u0117s \u0161launikaulio pad\u0117ties negalima numatyti prie\u0161 operacij\u0105",
+ "cn.ika2":"Ma\u017Eiausiai tyrim\u0173 i\u0161 vis\u0173 \u010Dia pateikt\u0173 b\u016Bd\u0173",
+ "pa.left":"I\u0161tiesinta","pa.right":"Palikta kaip yra",
+ "pa.ika":"Arba: subalansuota operacijos metu",
+ "cr.by":"Suk\u016Br\u0117 Saulius Brazauskas, 2026",
+ "cr.dis":"Tai geometrin\u0117 skai\u010Diuokl\u0117. Ji nereiškia ir nepakei\u010Dia gydytojo sprendimo.",
+ "pp.rka":"Beveik kaip yra",
+ "pl.rka":"\u0160is b\u016Bdas i\u0161laiko form\u0105, koki\u0105 j\u016Bs\u0173 koja visada tur\u0117jo, ta\u010Diau nei\u0161eina u\u017E kra\u0161tutinum\u0173 \u2013 lieka nustatytose ribose abipus ties\u0117s.",
+ "ev.lead.ma":"Tai seniai nusistov\u0117j\u0119s b\u016Bdas ir beveik visuose tyrimuose naudojamas kaip palyginimas.",
+ "ev.lead.ama":"\u0160is b\u016Bdas yra tarp dviej\u0173 pagrindini\u0173 ir atskirai tirtas re\u010Diau.",
+ "ev.lead.rka":"\u0160is b\u016Bdas i\u0161laiko j\u016Bs\u0173 form\u0105 ribose ir buvo tiesiogiai lygintas su tradiciniu.",
+ "ev.lead.ka":"\u0160is b\u016Bdas atkuria j\u016Bs\u0173 form\u0105 be apribojim\u0173 ir buvo tiesiogiai lygintas su tradiciniu.",
+ "ev.lead.ika":"\u0160is b\u016Bdas pirmiausia nustato blauzdikaul\u012F, o \u0161launikaul\u012F derina prie jo. Tiesiogiai j\u012F tyr\u0117 ma\u017Eiau tyrim\u0173.",
+ "ev.some":"\u017Demiau \u2013 {n} tyrimai.","ev.few":"Tik {n} i\u0161 \u017Eemiau pateikt\u0173 tyrim\u0173 j\u012F tyr\u0117 tiesiogiai, tod\u0117l \u012Frodym\u0173 ma\u017Eiau.",
+ "cp.prev":"{v}% artrozini\u0173 keli\u0173",
+ "cp.src":"Europos artrozini\u0173 keli\u0173 imtis. Pasiskirstymas skiriasi pagal region\u0105.",
+ "cp.pooled":"\u0160ioje imtyje \u0161is tipas sudaro {v}%; sujungtas Europos \u012Fvertis \u2013 {p}%. Regioniniai skirtumai dideli \u2013 I tipas Azijoje sudaro 51,3% artrozini\u0173 keli\u0173, Europoje \u2013 32,8%.",
+ "cp.bal":"CPAK klasifikacij\u0105 pristačiusiame straipsnyje {k}% \u0161io tipo kinematiškai atstatyt\u0173 keli\u0173 pasiek\u0117 optimal\u0173 balans\u0105, palyginti su {m}% mechaniškai atstatyt\u0173.",
+ "v.imp":"Implantas","v.gapset":"pagal tarpus","v.blade":"Ašmenys","c.blade":"Ašmenys","lg.blade":"Pjūvio tarpas","v.zoom":"Mastelis","c.varusL":"varus","c.valgusL":"valgus","c.flat":"plokščias","c.steep":"status",
+ "st.within":"Ribose","st.edge":"Ties riba","st.bad":"Už ribų","st.idle":"Neįvesta",
+ "th.lede":"Tikslai imami iš jūsų sudaryto plano. Kiekvieną rezekciją išmatuokite kaliperiu ir įveskite, kiek iš tikrųjų pašalinote. Kaulo plokštelė yra plonesnė už kreiptuvo gylį pjūvio pločiu.",
+ "th.cut":"Rezekcija","th.tgt":"Tikslas","th.meas":"Išmatuota","th.delta":"Skirtumas",
+ "th.checks":"Patvirtinimai","th.save":"Įrašyti atvejį į žurnalą",
+ "th.dis":"Aritmetinis jūsų įvestų reikšmių palyginimas. Neskirta klinikiniams sprendimams priimti.",
+ "th.dm":"Distalinis šlaunikaulis, medialinis","th.dl":"Distalinis šlaunikaulis, lateralinis",
+ "th.pm":"Užpakalinis šlaunikaulis, posteromedialinis","th.pl":"Užpakalinis šlaunikaulis, posterolateralinis",
+ "th.tm":"Blauzdikaulis, medialinis","th.tl":"Blauzdikaulis, lateralinis",
+ "th.q1":"Ar 90° kampu tarpiklis įtemptesnis medialiai, laisvesnis lateraliai ir sukasi apie medialinį skyrių?",
+ "th.q2":"Ar visiškai ištiesus varus-valgus laisvumas nereikšmingas ir medialinio bei lateralinio tarpo skirtumas neviršija 0,5 mm?",
+ "th.q3":"Ar blauzdikaulio pado rotacija nustatyta 4° ribose nuo lenkimo-tiesimo plokštumos?",
+ "th.bad":"{n} rezekcija (-os) už leistinos ribos.","th.ok":"Visos rezekcijos įrašytos ribose.",
+ "lg.warn":"Atvejai saugomi tik šioje naršyklėje. Atsisiųskite failą, kad juos išsaugotumėte.",
+ "lg.export":"Atsisiųsti failą","lg.import":"Įkelti failą","lg.empty":"Dar nėra įrašytų atvejų.",
+ "lg.case":"Atvejis","lg.dis":"Aprašomoji jūsų įvestų duomenų suvestinė. Klinikinių rekomendacijų neteikiama.",
+ "cp.h":"Fenotipas – CPAK","cp.split":"Deformacijos pasiskirstymas",
+ "cp.varus":"varus","cp.neutral":"neutrali","cp.valgus":"valgus",
+ "cp.ad":"virš. dist.","cp.jn":"neutrali","cp.ap":"virš. proks.",
+ "cp.adFull":"viršūnė distaliai","cp.apFull":"viršūnė proksimaliai",
+ "cp.bony":"{v}° kaulinė","cp.intra":"{v}° intraartikulinė",
+ "cp.sens":"±1° matavimo paklaida apima CPAK {n}. Skelbtas tipavimo patikimumas artrozinių kelių atveju – nuo prasto iki vidutinio.",
+ "conf.high":"Didelis patikimumas","conf.moderate":"Vidutinis patikimumas","conf.low":"Mažas patikimumas",
+ "pp.ma":"Visiškai ištiesinta","pp.ama":"Beveik ištiesinta",
+ "pp.ka":"Palikta kaip yra","pp.ika":"Subalansuota pagal sąnarį",
+ "pl.ma":"Šis būdas visiškai ištiesina koją, kad ir kokios formos ji buvo. Tai tradicinis metodas, turintis dešimtmečių rezultatų.",
+ "pl.ka":"Šis būdas atkuria sąnarį tokios formos, kokios jūsų koja visada buvo, todėl raiščiai lieka jiems įprastoje įtampoje.",
+ "pl.ama":"Šis būdas ištiesina beveik iki galo, bet nepriverčia kojos būti visiškai tiesios.",
+ "pl.ika":"Šis būdas pirmiausia atkuria blauzdikaulio formą, o šlaunikaulis nustatomas pagal tai, kaip sąnarys jaučiasi jį atvėrus.",
+ "pv.varus":"Jūsų kelias visada buvo šiek tiek išlenktas",
+ "pv.valgus":"Jūsų kelias visada buvo šiek tiek pasviręs į vidų",
+ "pv.neutral":"Jūsų kelias iš prigimties yra beveik tiesus",
+ "pv.yours":"Jūsų","pv.straight":"Tiesi",
+ "pv.b1":"Tokia jūsų kojos sandara nuo tada, kai baigėte augti. Tai nėra pažeidimas ir nėra neįprasta – labai daug žmonių yra būtent tokios sandaros.",
+ "pv.b2":"Planuojama sąnarį atkurti kuo artimiau esamai jūsų kojos sandarai, o ne priverstinai ją ištiesinti.",
+ "pv.b3":"Žmonės dažnai baiminasi, kad koja ir po operacijos atrodys išlenkta. Viename tyrime dauguma pacientų savo koją prieš operaciją apibūdino kaip išlenktą, o po operacijos visi ją apibūdino kaip tiesą.",
+ "nav.meas":"Matavimas",
+ "m.privacy":"Vaizdas lieka šioje naršyklėje. Jis niekur neįkeliamas, neįrašomas ir dingsta perkrovus puslapį. Naudokite eksportuotą JPEG ar PNG, o ne DICOM failą, ir prieš atidarydami nukirpkite paciento duomenų juostą.",
+ "m.manual":"Kiekvieną orientyrą pažymite jūs. Programa atlieka tik trigonometriją – anatomijos ji neieško.",
+ "m.pick":"Pasirinkite pilno ilgio rentgenogramą stovint",
+ "m.undo":"Atšaukti tašką","m.resetpts":"Pradėti iš naujo",
+ "m.results":"Išmatuoti kampai","m.apply":"Naudoti šias reikšmes plane",
+ "m.dis":"Trigonometrija pagal jūsų pažymėtus orientyrus. Ne automatinis matavimas, ne medicinos priemonė, neskirta klinikiniams sprendimams priimti.",
+"v.ml":"M / L","v.ap":"A / P","v.med":"Medialinis","v.lat":"Lateralinis",
+ "v.ant":"A","v.post":"P","v.slope":"nuolydis",
+ "c.valgusF":"valgus šlaunikaulis","c.varusF":"varus šlaunikaulis",
+ "c.varusT":"varus blauzdikaulis","c.valgusT":"valgus blauzdikaulis",
+ "c.wear":"Kremzlės nudilimas, mm","c.dfm":"Distalinis šlaunikaulis, medialinis",
+ "c.dfl":"Distalinis šlaunikaulis, lateralinis","c.tm":"Blauzdikaulis, medialinis",
+ "c.tl":"Blauzdikaulis, lateralinis",
+ "c.wearNote":"Distalinio ir užpakalinio šlaunikaulio kaulinis nudilimas nekompensuojamas – jis laikomas nereikšmingu net ir pažengusios artrozės atveju. Pridedama tik kremzlė.",
+ "d.def":"Geometrinė simuliacija pagal jūsų įvestas reikšmes. Ne medicinos priemonė. Neskirta klinikiniams sprendimams priimti.",
+ "d.tree":"Publikuotos chirurginės technikos santrauka. Ne rekomendacija.",
+ "lg.bone":"Kaulas","lg.cart":"Kremzlė","lg.def":"Netektis","lg.res":"Pašalinama","lg.cut":"Pjūvio plokštuma","lg.mech":"Mechaninė ašis",
+ "p.tbl":"Rezekcijos gyliai","p.cut":"Pjūvis","p.med":"Medialinis","p.lat":"Lateralinis","p.diff":"Skirtumas",
+ "p.how":"Kaip tai atliekama Evolution instrumentais",
+ "p.note":"Viršutinis skaičius – kreiptuvo gylis nuo sąnario paviršiaus. Mažesnis – kaulo plokštelė, kurią išmatuosite kaliperiu, atėmus pjūvio plotį.",
+ "g.lede":"Publikuoti korekciniai variantai Evolution medialinio sukimo sistemai, kai bandomieji tarpai nesutampa. Pateikiama kaip nuoroda – programa nepasirenka žingsnio už jus.",
+ "g.slope":"Blauzdikaulio kreiptuvas duoda 3° užpakalinį nuolydį, kai jo vertikali ašis lygiagreti blauzdikaulio ašiai. Anatominiam nuolydžiui kreiptuvas derinamas, kol pjūvio anga atitinka natūralų nuolydį. Žymiai didesnis nuolydis nei natūralus yra aprašytas užpakalinio įsėdimo ir užpakalinio krašto dilimo mechanizmas.",
+ "g.rot":"4-in-1 bloko angos duoda 3° išorinės rotacijos nuo užpakalinės krumplių ašies arba jokios per 0° angas. Kinematinėje technikoje naudojamos 0° angos, nes užpakalinių krumplių nudilimas paprastai nedidelis. Esant sunkiai varus ar valgus deformacijai užpakalinė krumplių ašis gali būti nepatikima, tada rotacija nustatoma pagal AP ašį ar epikondilus.",
+ "f.dist":"Distalinis šlaunikaulis","f.post":"Užpakalinis šlaunikaulis","f.tib":"Blauzdikaulis",
+ "s.ma":"MAA","s.ama":"kMAA","s.ka":"KAA","s.rka":"rKAA","s.ika":"aKAA",
+ "s.maF":"Mechaninės ašies atstatymas","s.amaF":"Koreguotas mechaninės ašies atstatymas",
+ "s.kaF":"Kinematinės ašies atstatymas","s.rkaF":"Ribojamas kinematinės ašies atstatymas",
+ "s.ikaF":"Atvirkštinis kinematinės ašies atstatymas",
+ "w.thin":"Rezekcija {v} mm yra plona. Patikrinkite kreiptuvo nustatymą ir nudilimo kompensaciją.",
+ "w.neg":"Apskaičiuotas gylis neigiamas. Ši strategija šiam keliui netaikoma be papildomos korekcijos.",
+ "w.rel":"Medialinė ir lateralinė rezekcijos perskirstomos {v} mm, palyginti su natūralia anatomija. Toks perskirstymas keičia šoninių raiščių įtampą.",
+ "w.bound":"Už rKAA ribų: galūnės ašis {v}°, riba ±3,0°.","w.ok":"Ašis ir komponentai rKAA ribose.",
+ "w.ika":"Šlaunikaulio rotaciją ir distalinį pjūvį lemia tarpų balansavimas – iš statinių kampų neapskaičiuojama.",
+ "ax.med":"M","ax.lat":"L","ax.hka":"Galūnės HKA",
+ "gg.ext":"Tiesimas","gg.flex":"Lenkimas","gg.ok":"Gerai","gg.tight":"Ankšta","gg.loose":"Laisva",
+ "ht.sub":"Publikuoti technikos žingsniai. Ne rekomendacija šiam pacientui."
+};
+const EN={
+ "v.imp":"Implant",
+ "mt.open":"Method and assumptions",
+ "mt.span":"One degree of correction is converted to millimetres across an assumed {f} mm femoral and {tb} mm tibial measurement span. If you caliper the tibia at the base of the spines rather than at the compartment centres, the true span is shorter and the differential smaller.",
+ "mt.post":"Posterior wear is converted to rotation across a {v} mm posterior condylar span.",
+ "mt.ref":"Tibial depth is referenced {v} mm from the more prominent plateau, per the guide convention.",
+ "mt.blade":"Blade thickness {v} mm, subtracted once per cut.",
+ "mt.cart":"Cartilage is drawn at {f} mm on the femur and {tb} mm on the tibia. The technique compensates 2 mm where worn to bone; that is a separate figure.",
+ "mt.sign":"Sign convention: aHKA = MPTA minus LDFA, negative is varus. Verify against three films with known values before relying on the output.",
+ "ab.ma":"MA","ab.ama":"aMA","ab.rka":"rKA","ab.ka":"KA","ab.ika":"iKA",
+ "pa.pros":"What it offers","pa.cons":"What to watch",
+ "pn.ma1":"Decades of survivorship data behind it",
+ "pn.ma2":"Reproducible with any standard instrument set",
+ "pn.ma3":"Component position is predictable and easy to audit",
+ "cn.ma1":"Most varus knees need a soft-tissue release to balance",
+ "cn.ma2":"Moves the joint line away from the shape the patient grew up with",
+ "cn.ma3":"Several trials report higher joint awareness than personalised methods",
+ "pn.ama1":"Less release than full mechanical alignment",
+ "pn.ama2":"Both components stay inside familiar safe limits",
+ "cn.ama1":"Still corrects most of the deformity away",
+ "cn.ama2":"The least studied of the coronal approaches",
+ "pn.rka1":"Restores much of the native shape while capping outliers",
+ "pn.rka2":"Best trial support among the personalised approaches",
+ "pn.rka3":"Achievable with manual instruments, no robot required",
+ "cn.rka1":"Most arthritic knees fall outside the safety range, so a correction is still needed",
+ "cn.rka2":"The boundary values are a convention, not a measured threshold",
+ "pn.ka1":"Restores the joint lines the knee had before arthritis",
+ "pn.ka2":"Usually balances without releasing collateral ligaments",
+ "pn.ka3":"Highest joint awareness scores in several randomised trials",
+ "cn.ka1":"Can leave a component outside classical alignment limits",
+ "cn.ka2":"At 10 and 13 years, trials show no advantage over mechanical alignment",
+ "pn.ika1":"Tibia is restored first, then the femur is balanced to the gaps",
+ "pn.ika2":"Depends less on radiographic measurement",
+ "cn.ika1":"Final femoral position cannot be predicted before surgery",
+ "cn.ika2":"Fewest trials of any approach here",
+ "c.tibwear":"Tibial wear","c.medshort":"med","c.latshort":"lat",
+ "pa.left":"Straightened","pa.right":"Left as built",
+ "pa.ika":"Or: balanced to fit during surgery",
+ "ab.lead":"A calculator for checking that the bony resections you plan and the ones you execute agree.",
+ "ab.body":"Enter the leg parameters and it works out the resection depth for each cut under each alignment strategy. Enter what you measured with the caliper in theatre and it shows where the two diverge, and by how much.",
+ "ab.limit":"It computes geometry from the figures you give it. It does not measure the knee, choose a strategy, or judge whether a plan is right for a patient.",
+ "cr.by":"Created by Saulius Brazauskas, 2026",
+ "cr.dis":"A geometric calculator. It does not imply or replace medical judgement.",
+ "m.open":"Measure from a radiograph instead",
+ "g.open":"If the trial gaps do not match",
+ "c.step1":"1 \u00b7 Side and implant","c.step2":"2 \u00b7 Leg parameters","c.step3":"3 \u00b7 Wear","v.gapset":"set by gaps",
+ "th.bladeOn":"Targets are the bone slab you can caliper — guide depth less the {v} mm blade.",
+ "th.bladeOff":"Targets are the depth the guide is set to, before the blade takes its cut.",
+ "pp.rka":"Mostly as built",
+ "pl.rka":"This approach keeps the shape your leg has always had, but stops short of the extremes — it stays within a set range either side of straight.",
+ "ev.lead.ma":"This is the long-established method, and it is the comparison used in almost every trial.",
+ "ev.lead.ama":"This sits between the two main methods, and has been studied less often on its own.",
+ "ev.lead.rka":"This keeps your own shape within limits, and has been compared directly with the traditional method.",
+ "ev.lead.ka":"This restores your own shape without limits, and has been compared directly with the traditional method.",
+ "ev.lead.ika":"This sets the shin bone first and balances the thigh bone to it. Fewer trials have looked at it directly.",
+ "ev.some":"{n} trials below.","ev.few":"Only {n} of the trials below studied it directly, so the evidence is thinner.",
+ "cp.prev":"{v}% of arthritic knees",
+ "cp.src":"European arthritic cohort. Distribution varies by region.",
+ "cp.pooled":"This cohort puts the type at {v}%; the pooled European estimate is {p}%. Regional variation is large — type I is 51.3% of arthritic knees in Asia against 32.8% in Europe.",
+ "cp.bal":"In the paper that introduced CPAK, {k}% of kinematically aligned knees of this type achieved optimal balance, against {m}% of mechanically aligned ones.","v.blade":"Blade","c.blade":"Blade",
+ "lg.blade":"Blade slot",
+ "ev.h":"What the studies show","ev.read":"Read the paper","ev.share":"Share","ev.copied":"Copied",
+ "ev.yes":"Found a benefit","ev.partial":"Small benefit","ev.no":"Found no difference",
+ "cp.varus":"varus","cp.neutral":"neutral","cp.valgus":"valgus",
+ "cp.ad":"apex dist.","cp.jn":"neutral","cp.ap":"apex prox.",
+ "cp.adFull":"apex distal","cp.apFull":"apex proximal",
+ "cp.bony":"{v}° bony","cp.intra":"{v}° intra-articular",
+ "cp.sens":"±1° measurement uncertainty spans CPAK {n}. Reported typing reliability in osteoarthritic knees is poor to moderate.",
+ "conf.high":"High confidence","conf.moderate":"Moderate confidence","conf.low":"Low confidence",
+ "pp.ma":"Fully straightened","pp.ama":"Nearly straightened",
+ "pp.ka":"Kept as built","pp.ika":"Balanced to fit",
+ "pl.ma":"This approach straightens the leg completely, whatever shape it started as. It is the traditional method and has decades of results behind it.",
+ "pl.ka":"This approach rebuilds the joint in the shape your leg has always had, so the ligaments are left at the tension they are used to.",
+ "pl.ama":"This approach straightens most of the way, but stops short of forcing the leg completely straight.",
+ "pl.ika":"This approach restores the shin bone to its own shape first, then sets the thigh bone by how the joint feels once it is open.",
+ "st.within":"Within","st.edge":"Marginal","st.bad":"Outside","st.idle":"Not entered",
+ "th.dm":"Distal femur, medial","th.dl":"Distal femur, lateral",
+ "th.pm":"Posterior femur, posteromedial","th.pl":"Posterior femur, posterolateral",
+ "th.tm":"Tibia, medial","th.tl":"Tibia, lateral",
+ "th.q1":"At 90°, does the spacer sit tighter medially, looser laterally, and pivot about the medial compartment?",
+ "th.q2":"In full extension, is varus-valgus laxity negligible and the medial-lateral gap difference within 0.5 mm?",
+ "th.q3":"Is the tibial baseplate rotation set within 4° of the flexion-extension plane?",
+ "th.bad":"{n} resection(s) outside tolerance.",
+ "th.ok":"All resections recorded within tolerance.",
+ "lg.empty":"No cases saved yet.","lg.case":"Case",
+ "pv.varus":"Your knee has always been slightly bowed",
+ "pv.valgus":"Your knee has always turned slightly inward",
+ "pv.neutral":"Your knee is naturally close to straight",
+ "pv.yours":"Yours","pv.straight":"Straight",
+ "v.ant":"A","v.post":"P","v.slope":"slope",
+ "w.rot":"A posterior wear difference of {d} mm corresponds to about {a}° of rotation. Referencing the guide off worn posterior condyles places the component in relative {dir} rotation.",
+ "w.rotInt":"internal","w.rotExt":"external",
+ "f.dist":"Distal femur","f.post":"Posterior femur","f.tib":"Tibia",
+ "s.ma":"MA","s.ama":"aMA","s.ka":"KA","s.rka":"rKA","s.ika":"iKA",
+ "s.maF":"Mechanical alignment","s.amaF":"Adjusted mechanical alignment",
+ "s.kaF":"Kinematic alignment","s.rkaF":"Restricted kinematic alignment",
+ "s.ikaF":"Inverse kinematic alignment",
+ "w.thin":"A resection of {v} mm is thin. Check the guide setting and wear compensation.",
+ "w.neg":"Computed depth is negative. This strategy is not achievable on this knee without further correction.",
+ "w.rel":"Medial and lateral resections are redistributed by {v} mm relative to native anatomy. That redistribution changes collateral tension.",
+ "w.bound":"Outside the rKA boundary: limb alignment {v}°, limit ±3.0°.",
+ "w.ok":"Limb and components within the rKA boundary.",
+ "w.ika":"Femoral rotation and the distal cut follow gap balancing — not derivable from static angles.",
+ "ax.med":"M","ax.lat":"L","ax.hka":"Limb HKA",
+ "gg.ext":"Extension","gg.flex":"Flexion","gg.ok":"OK","gg.tight":"Tight","gg.loose":"Loose",
+ "ht.sub":"Published technique steps. Not a recommendation for this patient."
+};
+let LANG="en"; const STATIC={};
+document.querySelectorAll("[data-i]").forEach(e=>STATIC[e.dataset.i]=e.textContent);
+function t(k,p){const d=LANG==="lt"?LT:EN;let s=d[k]??EN[k]??STATIC[k]??k;
+  if(p)for(const x in p)s=s.split("{"+x+"}").join(p[x]);return s;}
+function fmt(v,dp){if(v===null||Number.isNaN(v))return "\u2014";
+  return new Intl.NumberFormat(LANG==="lt"?"lt-LT":"en-GB",
+   {minimumFractionDigits:dp===undefined?1:dp,maximumFractionDigits:dp===undefined?1:dp}).format(v);}
+function sgn(v){if(v===null||Number.isNaN(v))return "\u2014";
+  return (v<-0.049?"\u2212":v>0.049?"+":"")+fmt(Math.abs(v));}
+const r1=v=>Math.round(v*10)/10, clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const TAN=d=>Math.tan(d*Math.PI/180);
+
+const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,
+  // Implant overlay is held back until the component outlines are checked
+  // against the technique guide. Flip this to true to bring it back.
+  implant:false, implantEnabled:false,
+  side:"right",size:4,ldfa:87,mpta:84.5,hka:-7,slope:7,
+  wear:{dm:2,dl:0,pm:1,pl:0,tm:2,tl:0},strat:"rka"};
+const V=id=>document.getElementById(id).value;
+const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
+function read(){
+  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));
+}
+
+function converge(f,tb,lim){let g=0;
+  while(Math.abs(tb-f)>lim+1e-9&&g++<3000){
+    if(Math.abs(tb-90)>=Math.abs(f-90))tb+=(tb<90?0.1:-0.1);else f+=(f<90?0.1:-0.1);}
+  return {ldfa:r1(f),mpta:r1(tb)};}
+function planned(id){const L=S.ldfa,M=S.mpta;
+  if(id==="ma")return{ldfa:90,mpta:90};
+  if(id==="ama")return converge(clamp(L,87,93),clamp(M,87,90),3);
+  if(id==="ka")return{ldfa:r1(L),mpta:r1(M)};
+  if(id==="rka")return converge(clamp(L,85,95),clamp(M,85,95),3);
+  if(id==="ika")return{ldfa:null,mpta:r1(clamp(M,85,95))};
+  return{ldfa:90,mpta:90};}
+/* LDFA is lateral-referenced: raising it toward 90 takes more bone medially.
+   MPTA is medial-referenced: raising it toward 90 takes more bone laterally. */
+function cuts(id){
+  const p=planned(id), post=EVO.post[S.size], dist=EVO.distal;
+  const dF=p.ldfa===null?null:r1(p.ldfa-S.ldfa), dT=r1(p.mpta-S.mpta);
+  const fS=dF===null?null:r1(FEMUR_SPAN/2*TAN(dF)), tS=r1(TIBIA_SPAN/2*TAN(dT));
+  const o={p:p,dF:dF,dT:dT,fS:fS,tS:tS,
+    distal:dF===null?null:{med:r1(dist-S.wear.dm+fS),lat:r1(dist-S.wear.dl-fS)},
+    posterior:{med:r1(post-S.wear.pm),lat:r1(post-S.wear.pl)},
+    tibia:{med:r1(TIBIA_REF-S.wear.tm-tS),lat:r1(TIBIA_REF-S.wear.tl+tS)}};
+  o.postDiff=r1(S.wear.pm-S.wear.pl);
+  o.postRot=r1(Math.atan(Math.abs(o.postDiff)/POSTERIOR_SPAN)*180/Math.PI);
+  o.hka=p.ldfa===null?null:r1(p.mpta-p.ldfa);
+  return o;}
+
+/* ===================== coronal anatomy =====================
+   Local frames in millimetres, origin at the centre of each joint surface,
+   +x medial before the side flip, +y distal on screen. */
+function tfm(cx,cy,th,sc,flip){
+  const c=Math.cos(th*Math.PI/180),s=Math.sin(th*Math.PI/180);
+  return function(p){const x=p[0]*c-p[1]*s,y=p[0]*s+p[1]*c;
+    return[cx+flip*x*sc,cy+y*sc];};}
+function PT(tf,p){const q=tf(p);return q[0].toFixed(1)+","+q[1].toFixed(1);}
+function path(tf,segs){let d="";
+  segs.forEach(function(s){d+=s[0]+s.slice(1).map(function(p){return PT(tf,p);}).join(" ")+" ";});
+  return d.trim();}
+
+/* Distal femur, anterior view. Dimensions in millimetres from anatomical
+   reference: condylar width ~76, shaft ~28, intercondylar notch ~21 wide and
+   ~27 deep. The medial condyle projects slightly further distally than the
+   lateral, independently of the LDFA tilt. */
+function femurPath(tilt){const y=function(x){return TAN(tilt)*x;};return[
+ ["M",[-14,-85]],
+ ["C",[-14.6,-74],[-15.6,-66],[-17.4,-58]],          // lateral shaft
+ ["C",[-20,-48],[-24.5,-40],[-29,-32]],              // lateral metaphyseal flare
+ ["C",[-33,-25],[-36,-20],[-37,-14]],                // lateral epicondyle
+ ["C",[-37.6,-9],[-37,-4],[-35.6,y(-35)-6.5]],
+ ["C",[-34.6,y(-33)-2.6],[-31.5,y(-30)-0.5],[-27,y(-27)+0.1]],  // lateral condyle
+ ["C",[-23,y(-23)+0.7],[-19.5,y(-20)+0.7],[-16,y(-16)-1.2]],
+ ["C",[-13,y(-13)-4.5],[-11.6,y(-11)-9],[-10.6,y(-10)-15]],     // notch wall
+ ["C",[-9.8,y(-9)-22],[-6,y(-5)-27],[0,y(0)-27.4]],             // notch roof
+ ["C",[6,y(5)-27],[9.8,y(9)-22],[10.6,y(10)-15]],
+ ["C",[11.6,y(11)-9],[13,y(13)-4.5],[16,y(16)-1.2]],
+ ["C",[19.5,y(20)+0.9],[23.5,y(23)+1.1],[27.5,y(27)+0.4]],      // medial condyle, fuller
+ ["C",[31.5,y(31)-0.4],[34.6,y(34)-2.8],[36,y(36)-7]],
+ ["C",[37.4,-11],[38.2,-15],[37,-19]],                          // medial epicondyle
+ ["C",[36.4,-22],[35.6,-24],[34.2,-26.5]],                      // adductor tubercle
+ ["C",[31,-33],[26,-41],[22,-50]],
+ ["C",[19,-58],[17,-68],[16,-85]],
+ ["Z"]];}
+
+/* Proximal tibia, anterior view. Plateau ~76 wide on a ~26 shaft.
+   Concave medial plateau, flatter lateral plateau, intercondylar eminence
+   with a taller medial spine. */
+function tibiaPath(tilt){const y=function(x){return TAN(tilt)*x;};return[
+ ["M",[-37,y(-36)+2.6]],
+ ["C",[-33,y(-32)-0.4],[-28,y(-27)-1.6],[-22,y(-22)-1.9]],      // lateral plateau
+ ["C",[-17,y(-17)-1.8],[-12,y(-12)-1.4],[-8.6,y(-8)-3.4]],
+ ["C",[-6.6,y(-6)-6],[-5.6,y(-5)-8.6],[-4.4,y(-4)-9.4]],        // lateral spine
+ ["C",[-3.2,y(-3)-8],[-2.4,y(-2)-5.4],[-0.6,y(0)-5]],           // eminence sulcus
+ ["C",[1.4,y(1)-6.4],[2.6,y(3)-10.6],[4.4,y(4)-11.6]],          // medial spine, taller
+ ["C",[6.4,y(7)-9],[8,y(9)-4],[11,y(11)-0.6]],
+ ["C",[15,y(15)+2.2],[20,y(20)+3.4],[26,y(26)+2.4]],            // concave medial plateau
+ ["C",[30,y(30)+1],[34,y(34)-0.4],[37,y(36)+2.4]],
+ ["C",[38,8],[36.6,15],[33,22]],                                 // medial metaphyseal flare
+ ["C",[28,32],[22,42],[19,52]],
+ ["C",[16.6,60],[15,70],[14.4,85]],
+ ["L",[-14.2,85]],
+ ["C",[-14.8,70],[-16.4,60],[-18.8,52]],
+ ["C",[-22,42],[-28,32],[-33,22]],                               // lateral flare
+ ["C",[-36.6,15],[-38,8],[-37,y(-36)+2.6]],
+ ["Z"]];}
+
+/* Fibula: styloid process, head, narrow neck, slim shaft. The head sits
+   roughly 15 mm distal to the lateral tibial plateau. */
+function fibulaPath(){return[
+ ["M",[-40.2,13]],
+ ["C",[-43.6,13.6],[-46.4,17],[-46.6,22]],
+ ["C",[-46.8,27],[-45.4,31],[-44.4,34]],                         // head
+ ["C",[-43.6,38],[-43.4,41],[-43.2,44]],                         // neck
+ ["C",[-42.8,54],[-42.2,66],[-42,85]],
+ ["L",[-37,85]],
+ ["C",[-37.2,66],[-37.6,54],[-38.2,44]],
+ ["C",[-38.4,40],[-38.6,36],[-39.4,32]],
+ ["C",[-40.4,28],[-41,24],[-40.6,19]],
+ ["C",[-40.5,16],[-40.4,14.5],[-40.2,13]],
+ ["Z"]];}
+
+/* Medullary canal, drawn as an inner void so the cortical shell reads as
+   a shell rather than a filled silhouette. */
+function femurCanal(){return[
+ ["M",[-8.4,-85]],["C",[-9,-72],[-10.4,-62],[-12.6,-52]],
+ ["C",[-14,-46],[-15,-42],[-15.4,-38]],["L",[10.4,-38]],
+ ["C",[10,-42],[11,-46],[12.4,-52]],
+ ["C",[10.8,-62],[9.6,-72],[9.4,-85]],["Z"]];}
+function tibiaCanal(){return[
+ ["M",[-8.6,85]],["C",[-9,72],[-10.2,62],[-12,54]],
+ ["C",[-13,50],[-13.6,47],[-13.8,44]],["L",[9.6,44]],
+ ["C",[9.4,47],[9.8,50],[10.8,54]],
+ ["C",[9.4,62],[8.6,72],[8.4,85]],["Z"]];}
+
+/* With the blade shown, the labelled figure is the bone slab you can actually
+   caliper. With it hidden, the figure is the depth the guide is set to. The
+   gap between those two numbers is what catches people out when a resection
+   measures thinner than expected. */
+function shown(v){ return S.blade ? r1(v - EVO.blade) : v; }
+
+/* The cut, drawn either as a zero-thickness plane or as the slot the saw
+   blade actually removes. dir is +1 where the blade takes bone distal to the
+   line and -1 where it takes bone proximal to it. */
+function cutPlane(tf,a,b,dir){
+  if(!S.blade) return seg(tf,a,b,"#0F6E56",2.8);
+  const th=EVO.blade;
+  const a2=[a[0],a[1]+dir*th], b2=[b[0],b[1]+dir*th];
+  return '<path d="'+poly(tf,[a,b,b2,a2],true)
+    +'" fill="#0F6E56" fill-opacity="0.92" stroke="#0B5744" stroke-width="0.6" stroke-linejoin="round"/>';
+}
+function seg(tf,a,b,stroke,w,dash){
+  const p=tf(a),q=tf(b);
+  return '<line x1="'+p[0].toFixed(1)+'" y1="'+p[1].toFixed(1)+'" x2="'+q[0].toFixed(1)
+   +'" y2="'+q[1].toFixed(1)+'" stroke="'+stroke+'" stroke-width="'+w+'" stroke-linecap="round"'
+   +(dash?' stroke-dasharray="'+dash+'"':'')+'/>';}
+function tag(tf,p,txt,anchor){const q=tf(p);
+  return '<text x="'+q[0].toFixed(1)+'" y="'+q[1].toFixed(1)+'" text-anchor="'+anchor
+   +'" font-size="13" font-weight="600" font-family="ui-monospace,monospace" fill="#0B5744">'+esc(txt)+'</text>';}
+
+function defs(){
+  return '<defs>'
+   +'<linearGradient id="shaft" x1="0" y1="0" x2="1" y2="0">'
+     +'<stop offset="0" stop-color="#EDEAE0"/><stop offset="0.42" stop-color="#DCD8CA"/>'
+     +'<stop offset="1" stop-color="#B4AF9F"/></linearGradient>'
+   +'<radialGradient id="condL" cx="0.38" cy="0.3" r="0.78">'
+     +'<stop offset="0" stop-color="#F4F1E8"/><stop offset="0.55" stop-color="#D9D5C6"/>'
+     +'<stop offset="1" stop-color="#A9A493"/></radialGradient>'
+   +'<radialGradient id="condM" cx="0.4" cy="0.28" r="0.8">'
+     +'<stop offset="0" stop-color="#F1EEE4"/><stop offset="0.55" stop-color="#D5D0C1"/>'
+     +'<stop offset="1" stop-color="#A5A08F"/></radialGradient>'
+   +'<linearGradient id="notch" x1="0" y1="0" x2="0" y2="1">'
+     +'<stop offset="0" stop-color="#8E8A7C" stop-opacity="0.55"/>'
+     +'<stop offset="1" stop-color="#8E8A7C" stop-opacity="0"/></linearGradient>'
+   +'<pattern id="deficit" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+     +'<rect width="5" height="5" fill="#EEEDFE"/>'
+     +'<line x1="0" y1="0" x2="0" y2="5" stroke="#7F77DD" stroke-width="2"/></pattern>'
+   +'<linearGradient id="cutface" x1="0" y1="0" x2="1" y2="0">'
+     +'<stop offset="0" stop-color="#E88C8B"/><stop offset="1" stop-color="#C4433F"/></linearGradient>'
+   +(implantDefs())
+   +'</defs>';
+
+}
+function drawFig(c){
+  // The joint line stays pinned near the middle of the canvas, so zooming
+  // crops the shafts rather than pushing the knee off-centre.
+  const W=360, SC=1.68*S.zoom, mid=180, JOINT=156;
+  const gapPx=5.4*SC, fY=JOINT-gapPx/2, tY=JOINT+gapPx/2;
+  const flip=S.side==="right"?1:-1;
+  // Varus: hip and ankle sit medial to the knee, so both bones lean medially.
+  const bow=(S.hka<0?1:-1)*Math.abs(S.hka)/2;
+  const tfF=tfm(mid,fY,flip*bow,SC,flip), tfT=tfm(mid,tY,-flip*bow,SC,flip);
+  const fT=90-S.ldfa, tT=90-S.mpta;
+  const ysF=function(x){return TAN(fT)*x;}, ysT=function(x){return TAN(tT)*x;};
+
+  /* Light from the upper lateral side. Cortical shell darker than cancellous
+     interior; condyles carry radial highlights so they read as rounded. */
+  let g=defs();
+  g+=seg(tfF,[0,-80],[0,0],"#8A867A",1,"5 4");
+  g+=seg(tfT,[0,0],[0,82],"#8A867A",1,"5 4");
+
+  // fibula behind the tibia
+  g+='<path d="'+path(tfT,fibulaPath())+'" fill="url(#shaft)" stroke="#8C8878" stroke-width="1.1" stroke-linejoin="round"/>';
+
+  // femur: shell, canal, condylar volumes
+  g+='<path d="'+path(tfF,femurPath(fT))+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  g+='<path d="'+path(tfF,femurCanal())+'" fill="#C6C1B0" fill-opacity="0.75" stroke="none"/>';
+  g+=blob(tfF,[-21,ysF(-21)-11],17,12.5,"url(#condL)",0.9);
+  g+=blob(tfF,[ 22,ysF(22)-11.5],18,13.5,"url(#condM)",0.9);
+  // intercondylar notch shadow
+  g+='<path d="'+path(tfF,[["M",[-10.6,ysF(-10)-14]],
+    ["C",[-9.8,ysF(-9)-22],[-6,ysF(-5)-27],[0,ysF(0)-27.4]],
+    ["C",[6,ysF(5)-27],[9.8,ysF(9)-22],[10.6,ysF(10)-14]],
+    ["L",[10.6,ysF(10)-2]],["L",[-10.6,ysF(-10)-2]],["Z"]])
+    +'" fill="url(#notch)"/>';
+
+  // tibia: shell, canal, plateau shading
+  g+='<path d="'+path(tfT,tibiaPath(tT))+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  g+='<path d="'+path(tfT,tibiaCanal())+'" fill="#C6C1B0" fill-opacity="0.75" stroke="none"/>';
+  g+=blob(tfT,[-22,ysT(-22)+7],14,6,"url(#condL)",0.7);
+  g+=blob(tfT,[ 23,ysT(23)+7.5],14.5,6,"url(#condM)",0.7);
+  // subchondral plates
+  g+='<path d="'+path(tfT,[["M",[-36,ysT(-36)+2]],
+    ["C",[-30,ysT(-30)-0.8],[-20,ysT(-20)-1.8],[-9,ysT(-9)-3]]])
+    +'" fill="none" stroke="#8C8878" stroke-width="1.3" stroke-linecap="round"/>';
+  g+='<path d="'+path(tfT,[["M",[10,ysT(10)-1]],
+    ["C",[16,ysT(16)+2.4],[24,ysT(24)+3],[36,ysT(36)+2]]])
+    +'" fill="none" stroke="#8C8878" stroke-width="1.3" stroke-linecap="round"/>';
+
+  // ---- cartilage and deficit ----
+  g+=cartilage(tfF,"femLat",ysF, 1,S.wear.dl);
+  g+=cartilage(tfF,"femMed",ysF, 1,S.wear.dm);
+  g+=cartilage(tfT,"tibLat",ysT,-1,S.wear.tl);
+  g+=cartilage(tfT,"tibMed",ysT,-1,S.wear.tm);
+
+  // ---- femoral resections ----
+  if(c.distal){
+    const hs=FEMUR_SPAN/2;
+    const yM=ysF(hs)-c.distal.med, yL=ysF(-hs)-c.distal.lat;
+    const ln=function(x){return yL+(yM-yL)*((x+hs)/(2*hs));};
+    g+='<path d="'+path(tfF,[["M",[-36.4,ln(-36.4)]],["L",[-35.8,ysF(-35)-6]],
+      ["C",[-34.6,ysF(-33)-2.6],[-31.5,ysF(-30)-0.5],[-27,ysF(-27)+0.1]],
+      ["C",[-23,ysF(-23)+0.7],[-19.5,ysF(-20)+0.7],[-16,ysF(-16)-1.2]],
+      ["C",[-13.4,ysF(-13)-4.2],[-11.8,ysF(-11.4)-7.6],[-11.2,ln(-11.2)]],["Z"]])
+      +'" fill="url(#cutface)" fill-opacity="0.55"/>';
+    g+='<path d="'+path(tfF,[["M",[11.2,ln(11.2)]],
+      ["C",[12.6,ysF(12.6)-6.6],[14,ysF(15)-2.6],[18,ysF(18)-0.2]],
+      ["C",[22,ysF(22)+1.1],[27.5,ysF(27)+0.4],[32,ysF(32)-0.4]],
+      ["L",[36.6,ysF(36)-7]],["L",[36.6,ln(36.6)]],["Z"]])
+      +'" fill="url(#cutface)" fill-opacity="0.55"/>';
+    g+=cutPlane(tfF,[-39,ln(-39)],[39.5,ln(39.5)],-1);
+    g+=tag(tfF,[42,ln(hs)-3.5],fmt(shown(c.distal.med)),flip>0?"start":"end");
+    g+=tag(tfF,[-42,ln(-hs)-3.5],fmt(shown(c.distal.lat)),flip>0?"end":"start");
+  }
+  // ---- tibial resection ----
+  {
+    const hs=TIBIA_SPAN/2;
+    const yM=ysT(hs)+c.tibia.med, yL=ysT(-hs)+c.tibia.lat;
+    const ln=function(x){return yL+(yM-yL)*((x+hs)/(2*hs));};
+    g+='<path d="'+path(tfT,[["M",[-37,ysT(-36)+2.6]],
+      ["C",[-33,ysT(-32)-0.4],[-28,ysT(-27)-1.6],[-22,ysT(-22)-1.9]],
+      ["C",[-17,ysT(-17)-1.8],[-12,ysT(-12)-1.4],[-8.6,ysT(-8)-3.4]],
+      ["C",[-6.6,ysT(-6)-6],[-5.6,ysT(-5)-8.6],[-4.4,ysT(-4)-9.4]],
+      ["C",[-3.2,ysT(-3)-8],[-2.4,ysT(-2)-5.4],[-0.6,ysT(0)-5]],
+      ["C",[1.4,ysT(1)-6.4],[2.6,ysT(3)-10.6],[4.4,ysT(4)-11.6]],
+      ["C",[6.4,ysT(7)-9],[8,ysT(9)-4],[11,ysT(11)-0.6]],
+      ["C",[15,ysT(15)+2.2],[20,ysT(20)+3.4],[26,ysT(26)+2.4]],
+      ["C",[30,ysT(30)+1],[34,ysT(34)-0.4],[37,ysT(36)+2.4]],
+      ["L",[37.4,ln(37.4)]],["L",[-37.4,ln(-37.4)]],["Z"]])
+      +'" fill="url(#cutface)" fill-opacity="0.55"/>';
+    g+=cutPlane(tfT,[-40,ln(-40)],[40,ln(40)],1);
+    g+=tag(tfT,[43,ln(hs)+4.5],fmt(shown(c.tibia.med)),flip>0?"start":"end");
+    g+=tag(tfT,[-43,ln(-hs)+4.5],fmt(shown(c.tibia.lat)),flip>0?"end":"start");
+  }
+
+  if(S.implantEnabled && S.implant) g+=implantCoronal(tfF,tfT,c,ysF,ysT);
+  var lgb=document.getElementById("lg-blade");
+  if(lgb) lgb.style.display=S.blade?"flex":"none";
+
+  g+='<text x="'+(flip>0?W-10:10)+'" y="24" text-anchor="'+(flip>0?"end":"start")
+    +'" font-size="13" font-weight="600" fill="#2C2C2A" font-family="sans-serif">'+esc(t("ax.med"))+'</text>';
+  g+='<text x="'+(flip>0?10:W-10)+'" y="24" text-anchor="'+(flip>0?"start":"end")
+    +'" font-size="13" font-weight="600" fill="#2C2C2A" font-family="sans-serif">'+esc(t("ax.lat"))+'</text>';
+  document.getElementById("fig").innerHTML=g;
+}
+/* Articular cartilage on an unworn surface, millimetres. What remains is
+   NATIVE_CARTILAGE minus the entered wear; the deficit is the wear itself,
+   which beyond ~2 mm represents bone loss as well as cartilage. */
+/* Native articular cartilage thickness, used for drawing only — the resection
+   arithmetic uses the wear values entered. Femoral and tibial cartilage differ,
+   and a single flat figure made worn and unworn compartments look alike.
+   Separate from the 2 mm compensation the calipered technique applies. */
+const NATIVE_CARTILAGE={femur:2.4, tibia:2.6};
+
+/* Sampled articular contours, matching the bone paths above. */
+const ARTIC={
+ femLat:[[-35.8,-6.5],[-33,-2.6],[-30,-0.5],[-27,0.1],[-23,0.7],[-20,0.7],[-16,-1.2],[-13,-4.5],[-11.2,-8]],
+ femMed:[[11.2,-8],[13,-4.5],[16,-1.2],[20,0.9],[23,1.1],[27.5,0.4],[31,-0.4],[34,-2.8],[36,-7]],
+ tibLat:[[-37,2.6],[-32,-0.4],[-27,-1.6],[-22,-1.9],[-17,-1.8],[-12,-1.4],[-8.6,-3.4]],
+ tibMed:[[9,-4],[11,-0.6],[15,2.2],[20,3.4],[26,2.4],[30,1],[34,-0.4],[36.6,2.2]]
+};
+/* Band between two offsets from an articular contour. dir is +1 where the
+   surface faces distally (femur) and -1 where it faces proximally (tibia). */
+function band(tf,pts,ys,dir,from,to){
+  if(Math.abs(to-from)<0.05) return "";
+  const a=pts.map(function(q){return [q[0], ys(q[0])+q[1]+dir*from];});
+  const b=pts.map(function(q){return [q[0], ys(q[0])+q[1]+dir*to];}).reverse();
+  const all=a.concat(b);
+  return '<path d="M'+all.map(function(q){return PT(tf,q);}).join(" L")+' Z"';
+}
+function cartilage(tf,key,ys,dir,wear){
+  const pts=ARTIC[key];
+  const native=key.indexOf("fem")===0?NATIVE_CARTILAGE.femur:NATIVE_CARTILAGE.tibia;
+  const remain=Math.max(0,native-wear);
+  let g="";
+  const h1=band(tf,pts,ys,dir,0,remain);
+  if(h1) g+=h1+' fill="#4E92B8" fill-opacity="0.8" stroke="#2F6A8C" stroke-width="0.5"/>';
+  const h2=band(tf,pts,ys,dir,remain,remain+wear);
+  if(h2) g+=h2+' fill="url(#deficit)" stroke="#534AB7" stroke-width="0.9" stroke-dasharray="3 2.5"/>';
+  return g;
+}
+
+/* ============ sagittal (A/P) view ============
+   Local frame: +x anterior, +y distal, origin at the distal-most point of the
+   condyle. Posterior condylar wear and tibial slope live in this plane, which
+   is why they cannot be shown in the coronal view. */
+/* Femoral sagittal profile. Anteroposterior dimension about 60 mm: anterior
+   cortex near +28, posterior condyle near -32, so the condyle overhangs the
+   posterior shaft cortex by roughly 12 mm. The posterior condyle approximates
+   a circle of ~20 mm radius; the distal and trochlear surfaces flatten out. */
+/* Femoral sagittal profile, generated as a J-curve: the articular surface is a
+   tight arc posteriorly and distally that flares anteriorly into the trochlea
+   and anterior cortex. Anteroposterior span about 58 mm. */
+const FEM_O=[-6,-22];
+function femR(phi){
+  const t=[[-118,25.5],[-90,25],[-45,23.5],[0,22],[25,22.8],[50,26],[72,30.5],[95,36]];
+  for(let i=0;i<t.length-1;i++){ if(phi<=t[i+1][0]){
+    const a=t[i],b=t[i+1],f=(phi-a[0])/(b[0]-a[0]); return a[1]+(b[1]-a[1])*f; } }
+  return t[t.length-1][1];
+}
+function femPt(phi){ const r=femR(phi), d=phi*Math.PI/180;
+  return [FEM_O[0]+r*Math.sin(d), FEM_O[1]+r*Math.cos(d)]; }
+function femProfile(from,to,n){
+  const out=[]; for(let i=0;i<=n;i++) out.push(femPt(from+(to-from)*i/n)); return out;
+}
+// Articular surface, anterior trochlea round to posterior condyle.
+const AP_FEM=femProfile(72,-112,22).map(function(q){return q;});
+// Full bone outline: articular arc plus cortices and shaft.
+function apFemBone(){
+  const arc=femProfile(88,-116,26);
+  const segs=[["M",[13,-90]]];
+  segs.push(["C",[14.6,-74],[17.4,-60],[21,-49]]);      // anterior cortex
+  segs.push(["C",[24,-40],[26.6,-32],[arc[0][0],arc[0][1]]]);
+  for(let i=1;i<arc.length;i++) segs.push(["L",arc[i]]);
+  segs.push(["C",[-30.6,-40],[-27.6,-46],[-25,-52]]);   // posterior condyle to cortex
+  segs.push(["C",[-22.6,-62],[-21.4,-74],[-21,-90]]);
+  segs.push(["Z"]);
+  return segs;
+}
+const AP_FEM_BONE=apFemBone();
+/* Blumensaat's line: roof of the intercondylar notch, posteroinferior to
+   anterosuperior. */
+const AP_BLUM=[["M",[-19,-29]],["L",[8,-40]]];
+/* Patella, anterior to the trochlea, apex distal. */
+const AP_PATELLA=[
+ ["M",[31,-42]],["C",[35,-48],[43,-50],[48,-45]],
+ ["C",[51.6,-40],[51,-31],[48.6,-23]],
+ ["C",[46.6,-16],[43,-11],[39.6,-9.6]],
+ ["C",[36,-12],[32.6,-17],[31.4,-25]],
+ ["C",[30.6,-31],[30,-38],[31,-42]],["Z"]];
+
+/* Tibial sagittal profile. The medial plateau is concave and has a greater
+   anteroposterior dimension; the lateral plateau is convex and shorter.
+   Both slope posteroinferiorly. */
+function apTibProfile(medial,slope){
+  const ap = medial ? 26 : 23;                    // half anteroposterior extent
+  const dish = medial ? 1.8 : -1.6;               // concave medial, convex lateral
+  const pts=[];
+  for(let i=0;i<=10;i++){
+    const f=i/10, x=ap-(2*ap)*f;                  // anterior to posterior
+    const bow=dish*Math.sin(Math.PI*f);           // dish or dome across the surface
+    pts.push([x, -TAN(slope)*x + bow]);           // posterior end sits lower
+  }
+  return pts;
+}
+function apTibBone(medial,slope){
+  const s=apTibProfile(medial,slope);
+  const a=s[0], pst=s[s.length-1];
+  return [
+   ["M",[a[0],a[1]]],
+   ["C",[a[0]+2.4,a[1]+7],[a[0]+1.6,a[1]+14],[a[0]-0.6,a[1]+19]],
+   ["C",[a[0]+3.6,a[1]+22],[a[0]+4.4,a[1]+28],[a[0]+1.4,a[1]+33]],   // tibial tuberosity
+   ["C",[a[0]-2.6,a[1]+40],[a[0]-5,a[1]+52],[a[0]-6.4,a[1]+66]],
+   ["C",[a[0]-7,a[1]+74],[a[0]-7.4,a[1]+80],[a[0]-7.6,a[1]+86]],
+   ["L",[pst[0]+7.6,pst[1]+86]],
+   ["C",[pst[0]+7,pst[1]+74],[pst[0]+6,pst[1]+58],[pst[0]+4.6,pst[1]+44]],
+   ["C",[pst[0]+3,pst[1]+30],[pst[0]+1,pst[1]+16],[pst[0],pst[1]+3]],
+   ["L",[pst[0],pst[1]]],
+   ["Z"]];
+}
+/* Fibular head, seen posteriorly and overlapping the tibia in this view. */
+function apFibula(slope){
+  return [
+   ["M",[-20,16]],["C",[-25,13.6],[-30,16],[-31.6,22]],
+   ["C",[-33,28],[-31.6,34],[-29.6,39]],
+   ["C",[-28.6,50],[-28,66],[-27.8,86]],
+   ["L",[-22.6,86]],["C",[-22.8,66],[-23.2,50],[-24,40]],
+   ["C",[-23,33],[-21.6,25],[-20,16]],["Z"]];
+}
+
+/* Offset a sampled profile along its outward normal, so a curved articular
+   surface keeps an even cartilage thickness around the condyle. */
+function offsetProfile(pts,d){
+  const out=[];
+  for(let i=0;i<pts.length;i++){
+    const a=pts[Math.max(0,i-1)], b=pts[Math.min(pts.length-1,i+1)];
+    let tx=b[0]-a[0], ty=b[1]-a[1];
+    const L=Math.hypot(tx,ty)||1; tx/=L; ty/=L;
+    // outward normal points away from the bone centre
+    out.push([pts[i][0]+ty*d, pts[i][1]-tx*d]);
+  }
+  return out;
+}
+function bandN(tf,pts,from,to){
+  if(Math.abs(to-from)<0.05) return "";
+  const a=offsetProfile(pts,from), b=offsetProfile(pts,to).reverse();
+  return '<path d="M'+a.concat(b).map(function(q){return PT(tf,q);}).join(" L")+' Z"';
+}
+function cartilageN(tf,pts,wear,surface){
+  const native=(surface==="tibia")?NATIVE_CARTILAGE.tibia:NATIVE_CARTILAGE.femur;
+  const remain=Math.max(0,native-wear);
+  let g="";
+  const h1=bandN(tf,pts,0,remain);
+  if(h1) g+=h1+' fill="#4E92B8" fill-opacity="0.8" stroke="#2F6A8C" stroke-width="0.5"/>';
+  const h2=bandN(tf,pts,remain,remain+wear);
+  if(h2) g+=h2+' fill="url(#deficit)" stroke="#534AB7" stroke-width="0.9" stroke-dasharray="3 2.5"/>';
+  return g;
+}
+function poly(tf,pts,close){
+  return "M"+pts.map(function(q){return PT(tf,q);}).join(" L")+(close?" Z":"");
+}
+
+function drawFigAP(c){
+  // Radiographic convention: lateral knee views display anterior on the LEFT,
+  // so the whole scene is mirrored via the transform flip.
+  const W=360, SC=1.72*S.zoom, mid=195, JOINT=164, AFLIP=-1;
+  const gapPx=8.7*SC, fY=JOINT-gapPx/2, tY=JOINT+gapPx/2;
+  const A2=function(a){return a==="start"?"end":a==="end"?"start":a;};
+  const med=S.comp==="med";
+  // Under inverse kinematic alignment the distal femoral cut follows gap
+  // balancing, so the plan contains no depth for it.
+  const femDerived = !!c.distal;
+  const distalD = femDerived ? (med?c.distal.med:c.distal.lat) : EVO.distal;
+  const postD   = med?c.posterior.med:c.posterior.lat;
+  const wearD   = med?S.wear.dm:S.wear.dl;
+  const wearP   = med?S.wear.pm:S.wear.pl;
+  const wearT   = med?S.wear.tm:S.wear.tl;
+  // Guide default is 3 degrees; kinematic technique sets the anatomic slope.
+  const planSlope = (S.strat==="ma"||S.strat==="ama") ? 3 : S.slope;
+  const tfF=tfm(mid,fY,0,SC,AFLIP), tfT=tfm(mid,tY,0,SC,AFLIP);
+  const POST_MOST=-31.0;
+  // Tibial profile is needed by the extensor mechanism as well as the cuts,
+  // so it is derived once here rather than part-way down.
+  const tibPts=apTibProfile(med,S.slope);
+
+  let g=defs();
+  // fibula sits behind the tibia
+  g+='<path d="'+path(tfT,apFibula(S.slope))+'" fill="#C4C0B1" fill-opacity="0.75" stroke="#8C8878" stroke-width="1"/>';
+  // tibia
+  g+='<path d="'+path(tfT,apTibBone(med,S.slope))+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  // femur
+  g+='<path d="'+path(tfF,AP_FEM_BONE)+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  g+=blob(tfF,[-8,-19],21,18,"url(#condM)",0.55);
+  g+='<path d="'+path(tfF,AP_BLUM)+'" fill="none" stroke="#8C8878" stroke-width="1.2" stroke-linecap="round"/>';
+  // patella, anterior to the trochlea
+  /* On a true lateral both condyles superimpose with a slight offset — the
+     double contour is what makes a lateral film read as a lateral. */
+  {
+    let dc="";
+    for(let ph=44; ph>=-100; ph-=8){
+      const r=femR(ph)-2.1, d=ph*Math.PI/180;
+      const q=tfF([FEM_O[0]+r*Math.sin(d), FEM_O[1]+r*Math.cos(d)]);
+      dc+=(dc?" L":"M")+q[0].toFixed(1)+","+q[1].toFixed(1);
+    }
+    g+='<path d="'+dc+'" fill="none" stroke="#8C8878" stroke-width="0.9" stroke-opacity="0.7"/>';
+  }
+  g+='<path d="'+path(tfF,AP_PATELLA)+'" fill="url(#shaft)" fill-opacity="0.9" stroke="#8C8878" stroke-width="1.2" stroke-linejoin="round"/>';
+  /* Extensor mechanism: quadriceps tendon above, patellar tendon running to
+     the tibial tuberosity below. Ties the patella to the tuberosity and makes
+     the anterior side unmistakable. */
+  {
+    const q1=tfF([32,-41]), q2=tfF([24,-52]);
+    const p1=tfF([39.4,-10]);
+    const tub=tibPts[0];
+    const p2=tfT([tub[0]+1.2, tub[1]+21]);
+    g+='<path d="M'+q1[0].toFixed(1)+','+q1[1].toFixed(1)+' L'+q2[0].toFixed(1)+','+q2[1].toFixed(1)
+      +'" stroke="#A29E92" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+    g+='<path d="M'+p1[0].toFixed(1)+','+p1[1].toFixed(1)+' Q'+((p1[0]+p2[0])/2+3*(p1[0]<p2[0]?1:-1)).toFixed(1)
+      +','+((p1[1]+p2[1])/2).toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1)
+      +'" stroke="#A29E92" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+  }
+
+  // cartilage: distal wear over the weight-bearing zone, posterior wear behind
+  const antHalf=AP_FEM.slice(0,12), postHalf=AP_FEM.slice(11);
+  g+=cartilageN(tfF,antHalf,wearD);
+  g+=cartilageN(tfF,postHalf,wearP);
+  g+=cartilageN(tfT,tibPts.slice().reverse(),wearT,"tibia");
+
+  // ---- femoral cuts: anterior, anterior chamfer, distal, posterior chamfer, posterior
+  const dy=-distalD, px=POST_MOST+postD, k=9;
+  const box=[[27.6,-46],[27.6,-18],[17,dy],[px+k,dy],[px,dy-k],[px,-38]];
+  const profile=femProfile(78,-112,20).concat([[-31,-38]]);
+  g+='<path d="'+poly(tfF,profile.concat(box.slice().reverse()),true)
+    +'" fill="url(#cutface)" fill-opacity="0.5"/>';
+  if(femDerived){
+    g+=seg(tfF,[27.6,-46],[27.6,-17],"#0F6E56",2.6);
+    g+=seg(tfF,[27.6,-17],[17.2,dy],"#0F6E56",2.6);
+    g+=cutPlane(tfF,[17,dy],[px+k,dy],-1);
+    g+=seg(tfF,[px+k,dy],[px,dy-k],"#0F6E56",2.6);
+    g+=seg(tfF,[px,dy-k],[px,-38],"#0F6E56",2.6);
+    g+=tag(tfF,[4,dy-4],fmt(shown(distalD)),"middle");
+  } else {
+    // No derivable distal cut under inverse kinematic alignment: shown dashed
+    // rather than substituting a depth the plan does not contain.
+    g+=seg(tfF,[27.6,-46],[27.6,-17],"#A8A497",2,"5 4");
+    g+=seg(tfF,[27.6,-17],[17.2,dy],"#A8A497",2,"5 4");
+    g+=seg(tfF,[17,dy],[px+k,dy],"#A8A497",2,"5 4");
+    g+=seg(tfF,[px+k,dy],[px,dy-k],"#A8A497",2,"5 4");
+    g+=seg(tfF,[px,dy-k],[px,-38],"#A8A497",2,"5 4");
+    const q=tfF([4,dy-5]);
+    g+='<text x="'+q[0].toFixed(1)+'" y="'+q[1].toFixed(1)+'" text-anchor="middle" font-size="10.5"'
+      +' fill="#8A867A" font-family="sans-serif">'+esc(t("v.gapset"))+'</text>';
+  }
+  g+=tag(tfF,[px-4,dy-k-5],fmt(shown(postD)),A2("end"));
+
+  // ---- tibial cut at the planned slope
+  const depth=med?c.tibia.med:c.tibia.lat;
+  const ref=tibPts[0];                                  // anterior plateau edge
+  const cutY=function(x){return ref[1]+depth-TAN(planSlope)*(x-ref[0]);};
+  const tibRemoved=tibPts.slice().reverse()
+    .concat([[tibPts[tibPts.length-1][0],cutY(tibPts[tibPts.length-1][0])],
+             [ref[0],cutY(ref[0])]]);
+  g+='<path d="'+poly(tfT,tibRemoved,true)+'" fill="url(#cutface)" fill-opacity="0.5"/>';
+  g+=cutPlane(tfT,[-30,cutY(-30)],[30,cutY(30)],1);
+  g+=tag(tfT,[33,cutY(28)+4],fmt(shown(depth)),A2("start"));
+
+  if(S.implantEnabled && S.implant) g+=implantSagittal(tfF,tfT,c,dy,px,k,cutY,tibPts,profile,box);
+
+  // slope readout
+  g+='<text x="14" y="'+Math.min(334,tY+150)+'" font-size="12" fill="#5F5E5A" font-family="sans-serif">'
+    +esc(t("v.slope"))+' '+esc(fmt(planSlope))+'\u00B0'
+    +(Math.abs(planSlope-S.slope)>0.05?'  ('+esc(sgn(r1(planSlope-S.slope)))+'\u00B0)':'')+'</text>';
+  g+='<text x="10" y="24" text-anchor="start" font-size="13" font-weight="600" fill="#2C2C2A" font-family="sans-serif">'+esc(t("v.ant"))+'</text>';
+  g+='<text x="'+(W-10)+'" y="24" text-anchor="end" font-size="13" font-weight="600" fill="#2C2C2A" font-family="sans-serif">'+esc(t("v.post"))+'</text>';
+  document.getElementById("fig").innerHTML=g;
+}
+
+/* ================= implant silhouettes =================
+   Drawn from the cut planes outwards, so the component restores roughly the
+   surface that was resected. Metal is rendered as a shell, polyethylene as a
+   lighter translucent body. Geometry is schematic — it uses the published
+   thicknesses and widths but is not a CAD outline of the component. */
+function implantDefs(){
+  return '<linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0" stop-color="#F2F4F6"/><stop offset="0.35" stop-color="#C3CAD1"/>'
+    +'<stop offset="0.72" stop-color="#8F98A2"/><stop offset="1" stop-color="#B9C1C9"/></linearGradient>'
+    +'<linearGradient id="poly" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0" stop-color="#FBF6E4"/><stop offset="1" stop-color="#E7DFC6"/></linearGradient>';
+}
+/* The component occupies the space the bone came from: its inner boundary is
+   the set of cut planes, its outer boundary is the articular surface that was
+   resected. Building it that way keeps it locked to the cuts, so it can never
+   float free of them or invert when the size changes. */
+function implantCoronal(tfF,tfT,c,ysF,ysT){
+  if(!c.distal) return "";
+  const half=EVO.ml[S.size]/2, hs=FEMUR_SPAN/2;
+  const yM=ysF(hs)-c.distal.med, yL=ysF(-hs)-c.distal.lat;
+  const ln=function(x){return yL+(yM-yL)*((x+hs)/(2*hs));};
+  const inner=[], outer=[];
+  for(let x=-half;x<=half+0.01;x+=2){
+    inner.push([x,ln(x)]);
+    outer.push([x,ln(x)+EVO.distal]);      // component thickness, distal to the cut
+  }
+  let g='<path d="'+poly(tfF,inner.concat(outer.reverse()),true)
+    +'" fill="url(#metal)" stroke="#6E777F" stroke-width="0.8" stroke-linejoin="round"/>';
+
+  const ths=TIBIA_SPAN/2, thalf=(EVO.ml[S.size]-4)/2;
+  const tM=ysT(ths)+c.tibia.med, tL=ysT(-ths)+c.tibia.lat;
+  const tln=function(x){return tL+(tM-tL)*((x+ths)/(2*ths));};
+  const base=[], baseTop=[], insTop=[];
+  for(let x=-thalf;x<=thalf+0.01;x+=2){
+    base.push([x,tln(x)]);
+    baseTop.push([x,tln(x)-EVO.baseplate]);
+    // Medial-pivot dish: the articular surface is deepest at the centre.
+    const d=Math.abs(x)/thalf;
+    insTop.push([x, tln(x)-EVO.insertThk+1.6*(1-d*d)]);
+  }
+  g+='<path d="'+poly(tfT,base.concat(baseTop.slice().reverse()),true)
+    +'" fill="url(#metal)" stroke="#6E777F" stroke-width="0.8" stroke-linejoin="round"/>';
+  g+='<path d="'+poly(tfT,baseTop.concat(insTop.slice().reverse()),true)
+    +'" fill="url(#poly)" fill-opacity="0.92" stroke="#B3A97F" stroke-width="0.7" stroke-linejoin="round"/>';
+  return g;
+}
+/* Sagittal: the femoral component fills the resected volume exactly, so it is
+   the same polygon as the removed bone. Size changes the cut planes, which
+   moves the component with them — the outer surface is never rescaled
+   independently, which previously let it invert on small sizes. */
+function implantSagittal(tfF,tfT,c,dy,px,k,cutY,tibPts,profile,box){
+  let g='<path d="'+poly(tfF,profile.concat(box.slice().reverse()),true)
+    +'" fill="url(#metal)" stroke="#6E777F" stroke-width="0.9" stroke-linejoin="round"/>';
+  const a=tibPts[0], b=tibPts[tibPts.length-1];
+  const bp=[[a[0],cutY(a[0])],[b[0],cutY(b[0])],
+            [b[0],cutY(b[0])-EVO.baseplate],[a[0],cutY(a[0])-EVO.baseplate]];
+  g+='<path d="'+poly(tfT,bp,true)
+    +'" fill="url(#metal)" stroke="#6E777F" stroke-width="0.8" stroke-linejoin="round"/>';
+  const top=[], dish=[];
+  for(let i=0;i<=12;i++){
+    const f=i/12, x=a[0]+(b[0]-a[0])*f;
+    top.push([x, cutY(x)-EVO.baseplate]);
+    const d=Math.abs(x-(a[0]+b[0])/2)/(Math.abs(a[0]-b[0])/2||1);
+    dish.push([x, cutY(x)-EVO.insertThk+1.6*(1-d*d)]);
+  }
+  g+='<path d="'+poly(tfT,top.concat(dish.reverse()),true)
+    +'" fill="url(#poly)" fill-opacity="0.92" stroke="#B3A97F" stroke-width="0.7" stroke-linejoin="round"/>';
+  return g;
+}
+
+/* Soft rounded volume used to give the condyles and plateaux depth. */
+function blob(tf,c,rx,ry,fill,op){
+  const p=tf(c), q=tf([c[0]+rx,c[1]]), r=tf([c[0],c[1]+ry]);
+  const RX=Math.hypot(q[0]-p[0],q[1]-p[1]), RY=Math.hypot(r[0]-p[0],r[1]-p[1]);
+  return '<ellipse cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" rx="'+RX.toFixed(1)
+   +'" ry="'+RY.toFixed(1)+'" fill="'+fill+'" fill-opacity="'+op+'"/>';
+}
+
+/* ===== per-strategy execution steps, from published technique ===== */
+const HOW_EN={
+ ma:["Set the valgus bushing to the slot matching this femur's anatomic-to-mechanical angle, so the distal cut lands perpendicular to the femoral mechanical axis.",
+     "Load the 10 mm distal resection guide and reference it against the prominent unresected condyle.",
+     "Set the extramedullary tibial guide with its vertical axis parallel to the tibial axis, giving a perpendicular cut with 3 degrees of posterior slope.",
+     "Drill the 4-in-1 preparation holes through the 3 degree holes for external rotation off the posterior condylar axis.",
+     "The whole deformity correction is taken from bone, so expect soft-tissue release to be needed for balance."],
+ ama:["As for mechanical alignment, but the tibial cut is left in slight varus rather than perpendicular.",
+      "If the first tibial cut is perpendicular and needs bringing back, use the 2 degree varus re-cut guide.",
+      "Keep both components within 3 degrees of perpendicular so the limb stays within 3 degrees of neutral.",
+      "Less release is usually needed than with full mechanical alignment, though some redistribution still occurs."],
+ ka:["Reference the distal femoral guide off the unworn condyle and add cartilage compensation on the worn side, so the resection restores the pre-arthritic surface.",
+     "Drill the 4-in-1 preparation holes through the 0 degree holes. Posterior condylar wear is usually slight, so no added external rotation.",
+     "Set the tibial guide to the anatomic slope by placing the dual reference gauge in the cutting slot and matching the native slope, rather than accepting the default 3 degrees.",
+     "Set the tibial stylus to resect from the more prominent side and let the worn side take proportionally less.",
+     "Verify every resection with a caliper against component thickness before trialling."],
+ rka:["Begin exactly as for kinematic alignment, referencing off the unworn condyle with cartilage compensation.",
+      "Where the plan exceeds the boundary, take the correction with the 2 degree varus or 2 degree valgus re-cut guide on the tibia rather than by releasing ligaments.",
+      "For a 1 degree correction, the dual reference gauge can be placed between the re-cut guide and the bone.",
+      "Recheck the limb axis to the ankle with the external alignment guide after any re-cut.",
+      "Verify with a caliper: the correction moves the medial and lateral targets away from component thickness."],
+ ika:["Resect the tibia first, restoring the native tibial joint line within the boundary.",
+      "Set femoral rotation and the distal cut from the gaps rather than from the radiograph, using the flexion and extension spacer blocks.",
+      "The spacer blocks already include femoral condyle, tibial base and insert thickness, so the block that fits indicates the insert.",
+      "The distal femoral cut is finalised only once the extension space matches the flexion space."]};
+const HOW_LT={
+ ma:["Nustatykite valgus įvorę į angą, atitinkančią šio šlaunikaulio anatominės ir mechaninės ašies kampą, kad distalinis pjūvis būtų statmenas mechaninei ašiai.",
+     "Uždėkite 10 mm distalinės rezekcijos kreiptuvą ir atremkite jį į prominentiškiausią nerezekuotą krumplį.",
+     "Ekstramedulinį blauzdikaulio kreiptuvą nustatykite taip, kad jo vertikali ašis būtų lygiagreti blauzdikaulio ašiai – gaunamas statmenas pjūvis su 3 laipsnių užpakaliniu nuolydžiu.",
+     "4-in-1 bloko angas gręžkite per 3 laipsnių angas, kad gautumėte išorinę rotaciją nuo užpakalinės krumplių ašies.",
+     "Visa deformacijos korekcija atliekama kaulu, todėl balansui tikėtinai prireiks minkštųjų audinių atpalaidavimo."],
+ ama:["Kaip ir mechaninės ašies atstatyme, tačiau blauzdikaulio pjūvis paliekamas nedideliame varus, o ne statmenas.",
+      "Jei pirmas blauzdikaulio pjūvis statmenas ir jį reikia grąžinti, naudokite 2 laipsnių varus perpjovimo kreiptuvą.",
+      "Abu komponentus išlaikykite 3 laipsnių ribose nuo statmens, kad galūnės ašis liktų 3 laipsnių ribose nuo neutralios.",
+      "Paprastai reikia mažiau atpalaidavimo nei visiškame mechaniniame atstatyme, tačiau perskirstymas vis tiek įvyksta."],
+ ka:["Distalinį kreiptuvą atremkite į nenudilusį krumplį ir pridėkite kremzlės kompensaciją nudilusioje pusėje, kad rezekcija atkurtų priešartrozinį paviršių.",
+     "4-in-1 bloko angas gręžkite per 0 laipsnių angas. Užpakalinių krumplių nudilimas paprastai nedidelis, todėl papildoma rotacija nereikalinga.",
+     "Blauzdikaulio kreiptuvą nustatykite anatominiam nuolydžiui: įdėkite dvigubos atskaitos matuoklį į pjūvio angą ir suderinkite su natūraliu nuolydžiu, o ne priimkite numatytuosius 3 laipsnius.",
+     "Blauzdikaulio stylių nustatykite pjauti nuo prominentiškesnės pusės, o nudilusi pusė proporcingai netenka mažiau.",
+     "Kiekvieną rezekciją prieš bandinius patikrinkite kaliperiu pagal komponento storį."],
+ rka:["Pradėkite lygiai taip pat kaip kinematiniame atstatyme – atremdami į nenudilusį krumplį su kremzlės kompensacija.",
+      "Kur planas viršija ribą, korekciją atlikite 2 laipsnių varus arba 2 laipsnių valgus perpjovimo kreiptuvu ant blauzdikaulio, o ne atpalaiduodami raiščius.",
+      "1 laipsnio korekcijai tarp perpjovimo kreiptuvo ir kaulo galima įdėti dvigubos atskaitos matuoklį.",
+      "Po bet kurio perpjovimo patikrinkite galūnės ašį iki kulkšnies išoriniu ašies kreiptuvu.",
+      "Tikrinkite kaliperiu: korekcija nutolina medialinį ir lateralinį tikslus nuo komponento storio."],
+ ika:["Pirmiausia rezekuokite blauzdikaulį, atkurdami natūralią blauzdikaulio sąnario liniją ribose.",
+      "Šlaunikaulio rotaciją ir distalinį pjūvį nustatykite pagal tarpus, o ne pagal rentgenogramą, naudodami lenkimo ir tiesimo tarpiklius.",
+      "Tarpikliai jau įskaičiuoja šlaunikaulio krumplio, blauzdikaulio pado ir įdėklo storį, todėl tilpęs tarpiklis nurodo įdėklą.",
+      "Distalinis šlaunikaulio pjūvis galutinai nustatomas tik tada, kai tiesimo tarpas atitinka lenkimo tarpą."]};
+
+function renderHow(){
+  const list=(LANG==="lt"?HOW_LT:HOW_EN)[S.strat]||[];
+  let h='<h3>'+esc(t("s."+S.strat+"F"))+'</h3><p class="sub">'+esc(t("ht.sub"))+'</p><ol>';
+  list.forEach(function(x){h+='<li>'+esc(x)+'</li>';});
+  document.getElementById("howto").innerHTML=h+'</ol>';
+}
+
+function render(){
+  document.querySelectorAll("[data-i]").forEach(function(e){
+    e.textContent=LANG==="lt"?(LT[e.dataset.i]||STATIC[e.dataset.i]):STATIC[e.dataset.i];});
+  document.documentElement.lang=LANG;
+  read();renderSizes();renderWear();renderStrats();renderPlan();renderGaps();renderLog();
+}
+function renderSizes(){
+  const w=document.getElementById("sizes");w.innerHTML="";
+  EVO.sizes.forEach(function(sz){const b=document.createElement("button");
+    b.textContent=sz;b.setAttribute("aria-pressed",String(sz===S.size));
+    b.addEventListener("click",function(){S.size=sz;renderSizes();renderPlan();});w.appendChild(b);});
+  document.getElementById("implchips").innerHTML=
+    '<span class="chip">'+esc(LANG==="lt"?"Distalinis":"Distal")+' <b>'+fmt(EVO.distal,0)+'</b> mm</span>'
+   +'<span class="chip">'+esc(LANG==="lt"?"Užpakalinis":"Posterior")+' <b>'+fmt(EVO.post[S.size],0)+'</b> mm</span>'
+   +'<span class="chip">M/L <b>'+fmt(EVO.ml[S.size],0)+'</b> mm</span>'
+   +'<span class="chip">'+esc(t("c.blade"))+' <b>'+fmt(EVO.blade)+'</b> mm</span>';
+}
+function renderWear(){
+  document.querySelectorAll(".wear").forEach(function(row){
+    const k=row.dataset.w, box=row.querySelector(".steps");
+    if(box.childElementCount===0){
+      WEAR_STEPS.forEach(function(v){
+        const b=document.createElement("button");
+        b.textContent=v;
+        b.addEventListener("click",function(){S.wear[k]=v;renderWear();renderPlan();});
+        box.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(box.children,function(b,i){
+      b.setAttribute("aria-pressed",String(WEAR_STEPS[i]===S.wear[k]));});
+  });
+  const ts=document.getElementById("tibsum");
+  if(ts) ts.textContent = t("c.medshort")+" "+fmt(S.wear.tm,0)+" \u00b7 "
+                        + t("c.latshort")+" "+fmt(S.wear.tl,0)+" mm";
+}
+function renderStrats(){
+  const w=document.getElementById("strats");w.innerHTML="";
+  ["ma","ama","ka","rka","ika"].forEach(function(id){const b=document.createElement("button");
+    b.textContent=t("s."+id);b.setAttribute("aria-pressed",String(id===S.strat));
+    b.addEventListener("click",function(){S.strat=id;renderStrats();renderPlan();});w.appendChild(b);});
+}
+/* These constants scale every figure the planner produces, so they are stated
+   in the interface rather than left buried in the source. */
+function renderMethod(){
+  const el=document.getElementById("methodlist"); if(!el) return;
+  el.innerHTML=[
+    t("mt.span",{f:FEMUR_SPAN,tb:TIBIA_SPAN}),
+    t("mt.post",{v:POSTERIOR_SPAN}),
+    t("mt.ref",{v:TIBIA_REF}),
+    t("mt.blade",{v:fmt(EVO.blade,2)}),
+    t("mt.cart",{f:fmt(NATIVE_CARTILAGE.femur),tb:fmt(NATIVE_CARTILAGE.tibia)}),
+    t("mt.sign")
+  ].map(function(x){return "<li>"+esc(x)+"</li>";}).join("");
+}
+function renderPlan(){
+  const c=cuts(S.strat);
+  document.getElementById("planchips").innerHTML=
+    '<span class="chip">LDFA <b>'+(c.p.ldfa===null?"\u2014":fmt(c.p.ldfa))+'</b></span>'
+   +'<span class="chip">MPTA <b>'+fmt(c.p.mpta)+'</b></span>'
+   +'<span class="chip">'+esc(t("ax.hka"))+' <b>'+(c.hka===null?"\u2014":sgn(c.hka))+'</b></span>';
+  const tb=document.getElementById("cuts");tb.innerHTML="";
+  [["f.dist",c.distal],["f.post",c.posterior],["f.tib",c.tibia]].forEach(function(row){
+    const k=row[0],v=row[1],tr=document.createElement("tr");
+    if(v===null)tr.innerHTML='<td>'+esc(t(k))+'</td><td colspan="3" style="color:var(--bone);font-size:12px;text-align:right">'+esc(t("w.ika"))+'</td>';
+    else tr.innerHTML='<td>'+esc(t(k))+'</td>'
+      +'<td class="n">'+fmt(v.med)+'<span class="delta">'+fmt(r1(v.med-EVO.blade))+'</span></td>'
+      +'<td class="n">'+fmt(v.lat)+'<span class="delta">'+fmt(r1(v.lat-EVO.blade))+'</span></td>'
+      +'<td class="n">'+sgn(r1(v.med-v.lat))+'</td>';
+    tb.appendChild(tr);});
+  const wr=document.getElementById("planwarn");wr.innerHTML="";
+  const vals=[];if(c.distal)vals.push(c.distal.med,c.distal.lat);vals.push(c.tibia.med,c.tibia.lat);
+  const mn=Math.min.apply(null,vals);
+  if(mn<0)wr.innerHTML+='<div class="warnbox w-bad">'+esc(t("w.neg"))+'</div>';
+  else if(mn<2)wr.innerHTML+='<div class="warnbox w-edge">'+esc(t("w.thin",{v:fmt(mn)}))+'</div>';
+  const rd=Math.abs(c.dF===null?0:FEMUR_SPAN*TAN(c.dF))+Math.abs(TIBIA_SPAN*TAN(c.dT));
+  if(rd>=1.5)wr.innerHTML+='<div class="warnbox w-info">'+esc(t("w.rel",{v:fmt(r1(rd))}))+'</div>';
+  if(c.hka!==null)wr.innerHTML+=(Math.abs(c.hka)>3.0
+    ?'<div class="warnbox w-bad">'+esc(t("w.bound",{v:sgn(c.hka)}))+'</div>'
+    :'<div class="warnbox w-ok">'+esc(t("w.ok"))+'</div>');
+  const rn=document.getElementById("rotnote");
+  if(rn){
+    if(Math.abs(c.postDiff)>=1){
+      const dir=t(c.postDiff>0?"w.rotInt":"w.rotExt");
+      rn.innerHTML='<div class="warnbox w-info">'
+        +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
+    } else rn.innerHTML="";
+  }
+  renderCpak(); renderStudies(); renderHow(); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  if(S.view==="ap") drawFigAP(c); else drawFig(c);
+  document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
+}
+const GAPS={"ok-ok":"No adjustment necessary",
+ "ok-tight":"Cut more posterior condyle — results in a smaller femoral component",
+ "ok-loose":"May not be necessary; the ball-in-socket design accommodates slight flexion laxity",
+ "tight-ok":"Recut the distal femur","tight-tight":"Cut more tibia",
+ "tight-loose":"Recut the distal femur and use a thicker insert if necessary",
+ "loose-ok":"Use a thicker insert; recut the distal femur if necessary",
+ "loose-tight":"Cut more posterior slope and use a thicker insert",
+ "loose-loose":"Use a thicker insert"};
+const GAPS_LT={"ok-ok":"Koreguoti nereikia",
+ "ok-tight":"Nupjauti daugiau užpakalinio krumplio – gaunamas mažesnis šlaunikaulio komponentas",
+ "ok-loose":"Gali nereikėti; rutulio-lizdo konstrukcija toleruoja nedidelį laisvumą lenkiant",
+ "tight-ok":"Perpjauti distalinį šlaunikaulį","tight-tight":"Nupjauti daugiau blauzdikaulio",
+ "tight-loose":"Perpjauti distalinį šlaunikaulį ir, jei reikia, storesnis įdėklas",
+ "loose-ok":"Storesnis įdėklas; jei reikia, perpjauti distalinį šlaunikaulį",
+ "loose-tight":"Didesnis užpakalinis nuolydis ir storesnis įdėklas",
+ "loose-loose":"Storesnis įdėklas"};
+function renderGaps(){
+  const g=document.getElementById("gapgrid"),k=["ok","tight","loose"];
+  let h='<div class="hd"></div>';
+  k.forEach(function(x){h+='<div class="hd">'+esc(t("gg.flex"))+'<br>'+esc(t("gg."+x))+'</div>';});
+  k.forEach(function(e){h+='<div class="rh">'+esc(t("gg.ext"))+'<br>'+esc(t("gg."+e))+'</div>';
+    k.forEach(function(f){const key=e+"-"+f;
+      h+='<div class="cell'+(key==="ok-ok"?" ok":"")+'">'+esc((LANG==="lt"?GAPS_LT:GAPS)[key])+'</div>';});});
+  g.innerHTML=h;
+}
+
+/* Slider and number field are two views of the same value. Typing a figure
+   outside the slider range still works; the thumb parks at the end. */
+/* Paint the filled portion of a range track. Uses a per-element style rule
+   keyed on a generated id, because the pseudo-element cannot be reached from
+   an inline style. Elements created dynamically get an id assigned here. */
+let TRACK_SEQ=0;
+function paintTrack(r){
+  if(!r) return;
+  if(!r.id) r.id="rng-"+(++TRACK_SEQ);
+  const min=parseFloat(r.min),max=parseFloat(r.max);
+  const pct=Math.max(0,Math.min(100,((parseFloat(r.value)-min)/((max-min)||1))*100));
+  const fill="linear-gradient(90deg,var(--teal) 0 "+pct+"%,var(--mist) "+pct+"% 100%)";
+  let st=document.getElementById("st-"+r.id);
+  if(!st){ st=document.createElement("style"); st.id="st-"+r.id; document.head.appendChild(st); }
+  st.textContent="#"+r.id+"::-webkit-slider-runnable-track{background:"+fill+"}"
+                +"#"+r.id+"::-moz-range-track{background:"+fill+"}";
+}
+function linkSlider(numId,rangeId){
+  const n=document.getElementById(numId), r=document.getElementById(rangeId);
+  function fromRange(){ n.value=parseFloat(r.value).toFixed(1); paintTrack(r); read(); renderPlan(); }
+  function fromNumber(){
+    const v=parseFloat(n.value);
+    if(Number.isFinite(v)) r.value=Math.min(parseFloat(r.max),Math.max(parseFloat(r.min),v));
+    paintTrack(r); read(); renderPlan();
+  }
+  r.addEventListener("input",fromRange);
+  n.addEventListener("input",fromNumber);
+  paintTrack(r);
+}
+linkSlider("i-ldfa","r-ldfa");
+linkSlider("i-mpta","r-mpta");
+
+
+/* ================= landmark measurement =================
+   The image never leaves the browser: it is read with FileReader into an
+   in-memory bitmap, drawn to a canvas, and dropped on reload. Nothing is
+   uploaded and nothing is written to storage.
+   The user places every landmark. This module only does trigonometry. */
+/* Six landmarks. Fewer is not possible: LDFA and MPTA are angles between a
+   mechanical axis and a joint line, so each joint line needs two points. The
+   knee centres are derived as the midpoints of those pairs. */
+const LM_STEPS=[
+ {k:"hip", en:["Centre of the femoral head","Click the middle of the femoral head"],
+           lt:["Šlaunikaulio galvos centras","Spustelėkite šlaunikaulio galvos vidurį"]},
+ {k:"fl",  en:["Lateral femoral condyle","Most distal point of the lateral condyle"],
+           lt:["Lateralinis šlaunikaulio krumplys","Distaliausias lateralinio krumplio taškas"]},
+ {k:"fm",  en:["Medial femoral condyle","Most distal point of the medial condyle"],
+           lt:["Medialinis šlaunikaulio krumplys","Distaliausias medialinio krumplio taškas"]},
+ {k:"tl",  en:["Lateral tibial plateau","Lateral edge of the tibial joint surface"],
+           lt:["Lateralinis blauzdikaulio plokščiakalnis","Lateralinis sąnario paviršiaus kraštas"]},
+ {k:"tm",  en:["Medial tibial plateau","Medial edge of the tibial joint surface"],
+           lt:["Medialinis blauzdikaulio plokščiakalnis","Medialinis sąnario paviršiaus kraštas"]},
+ {k:"ank", en:["Centre of the ankle","Middle of the tibial plafond"],
+           lt:["Kulkšnies centras","Blauzdikaulio sąnarinio paviršiaus vidurys"]}
+];
+const M={img:null, pts:{}, order:[], drag:null, scale:1};
+
+const subv=function(a,b){return [a[0]-b[0],a[1]-b[1]];};
+function angBetween(u,v){
+  const d=(u[0]*v[0]+u[1]*v[1])/((Math.hypot(u[0],u[1])||1)*(Math.hypot(v[0],v[1])||1));
+  return Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI;
+}
+const mid2=function(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2];};
+function measured(){
+  const P=M.pts;
+  if(!(P.hip&&P.fl&&P.fm&&P.tl&&P.tm&&P.ank)) return null;
+  const KF=mid2(P.fl,P.fm);           // distal femoral centre
+  const KT=mid2(P.tl,P.tm);           // proximal tibial centre
+  // LDFA: proximal femoral axis ray against the medial-to-lateral joint ray
+  const ldfa=angBetween(subv(P.hip,KF), subv(P.fl,P.fm));
+  // MPTA: proximal tibial axis ray against the lateral-to-medial joint ray
+  const mpta=angBetween(subv(KT,P.ank), subv(P.tm,P.tl));
+  const jl=angBetween(subv(P.fm,P.fl), subv(P.tm,P.tl));
+  // HKA magnitude at the knee; sign from which side of hip-ankle the knee sits
+  const hkaMag=180-angBetween(subv(P.hip,KF), subv(P.ank,KT));
+  const medial=subv(P.fm,P.fl);
+  const HA=subv(P.ank,P.hip), KH=subv(KF,P.hip);
+  const crossK=HA[0]*KH[1]-HA[1]*KH[0];
+  const crossM=HA[0]*medial[1]-HA[1]*medial[0];
+  const hka=((crossK*crossM)<0?-1:1)*Math.abs(hkaMag);
+  return {ldfa:r1(ldfa), mpta:r1(mpta), hka:r1(hka), jlca:r1(jl),
+          ahka:r1(r1(mpta)-r1(ldfa)), KF:KF, KT:KT};
+}
+function nextStep(){ return LM_STEPS.find(function(s){return !M.pts[s.k];}) || null; }
+
+function drawCanvas(){
+  const cv=document.getElementById("cv"); if(!M.img) return;
+  const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.drawImage(M.img,0,0,cv.width,cv.height);
+  const P=M.pts, s=cv.width/M.img.naturalWidth;
+  function dot(p,fill,r){ ctx.beginPath(); ctx.arc(p[0]*s,p[1]*s,r||6,0,7);
+    ctx.fillStyle=fill; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle="#fff"; ctx.stroke(); }
+  function line(a,b,col,w,dash){ ctx.save(); ctx.setLineDash(dash||[]);
+    ctx.beginPath(); ctx.moveTo(a[0]*s,a[1]*s); ctx.lineTo(b[0]*s,b[1]*s);
+    ctx.strokeStyle=col; ctx.lineWidth=w||2; ctx.stroke(); ctx.restore(); }
+  const KF=(P.fl&&P.fm)?mid2(P.fl,P.fm):null;
+  const KT=(P.tl&&P.tm)?mid2(P.tl,P.tm):null;
+  if(P.hip&&KF) line(P.hip,KF,"#9FE1CB",2.5);
+  if(KT&&P.ank) line(KT,P.ank,"#9FE1CB",2.5);
+  if(P.hip&&P.ank) line(P.hip,P.ank,"#7F77DD",1.5,[6,5]);
+  if(P.fl&&P.fm) line(P.fl,P.fm,"#EF9F27",2.5);
+  if(P.tl&&P.tm) line(P.tl,P.tm,"#EF9F27",2.5);
+  if(KF) dot(KF,"#0F6E56",4.5);
+  if(KT) dot(KT,"#0F6E56",4.5);
+  ["hip","ank"].forEach(function(k){ if(P[k]) dot(P[k],"#4E92B8"); });
+  ["fl","fm","tl","tm"].forEach(function(k){ if(P[k]) dot(P[k],"#EF9F27"); });
+}
+function evtPoint(e){
+  const cv=document.getElementById("cv"), r=cv.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+  const s=M.img.naturalWidth/r.width;
+  return {x:cx*s, y:cy*s, sx:cx, sy:cy};
+}
+function showLoupe(pt){
+  const lp=document.getElementById("loupe"), cv=document.getElementById("cv");
+  lp.width=132; lp.height=132; lp.classList.remove("hidden");
+  const g=lp.getContext("2d"); const Z=4;
+  g.fillStyle="#151412"; g.fillRect(0,0,132,132);
+  g.drawImage(M.img, pt.x-16, pt.y-16, 32, 32, 0,0,132,132);
+  g.beginPath(); g.moveTo(66,50); g.lineTo(66,82); g.moveTo(50,66); g.lineTo(82,66);
+  g.strokeStyle="#0F6E56"; g.lineWidth=1.5; g.stroke();
+  const r=cv.getBoundingClientRect();
+  lp.style.left=Math.max(4,Math.min(r.width-136, pt.sx-66))+"px";
+  lp.style.top=Math.max(4, pt.sy-150)+"px";
+}
+function hideLoupe(){ document.getElementById("loupe").classList.add("hidden"); }
+
+function renderMeas(){
+  const step=nextStep();
+  const sn=document.getElementById("stepnow");
+  if(step){
+    const txt=LANG==="lt"?step.lt:step.en;
+    sn.innerHTML='<b>'+esc((LANG==="lt"?"Taškas ":"Point ")+(M.order.length+1)+" / 6")+'</b>'+esc(txt[0])+' \u2014 '+esc(txt[1]);
+  } else {
+    sn.innerHTML='<b>'+esc(LANG==="lt"?"Baigta":"Complete")+'</b>'
+      +esc(LANG==="lt"?"Tempkite bet kurį tašką, kad patikslintumėte.":"Drag any point to refine it.");
+  }
+  const lm=document.getElementById("landmarks"); lm.innerHTML="";
+  LM_STEPS.forEach(function(s){
+    const el=document.createElement("span");
+    el.textContent=(LANG==="lt"?s.lt:s.en)[0];
+    if(M.pts[s.k]) el.className="done";
+    lm.appendChild(el);
+  });
+  const r=measured();
+  const out=document.getElementById("measout");
+  if(r){
+    out.classList.remove("hidden");
+    const rows=[["LDFA",deg2(r.ldfa)],["MPTA",deg2(r.mpta)],["aHKA",sgn(r.ahka)+"\u00B0"],
+                [LANG==="lt"?"Išmatuotas HKA":"Measured HKA",sgn(r.hka)+"\u00B0"],
+                [LANG==="lt"?"Sąnario linijų kampas":"Joint line convergence",deg2(180-r.jlca)]];
+    document.getElementById("mtbl").innerHTML=rows.map(function(x){
+      return '<tr><td>'+esc(x[0])+'</td><td class="n">'+esc(x[1])+'</td></tr>';}).join("");
+  } else out.classList.add("hidden");
+  drawCanvas();
+}
+function deg2(v){ return fmt(v)+"\u00B0"; }
+
+document.getElementById("img-in").addEventListener("change",function(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(){
+    const im=new Image();
+    im.onload=function(){
+      M.img=im; M.pts={}; M.order=[];
+      const cv=document.getElementById("cv");
+      const maxW=520; const sc=Math.min(1,maxW/im.naturalWidth);
+      cv.width=Math.round(im.naturalWidth*sc); cv.height=Math.round(im.naturalHeight*sc);
+      document.getElementById("canvaswrap").classList.remove("hidden");
+      ["stepnow","landmarks","measbtns"].forEach(function(id){
+        document.getElementById(id).classList.remove("hidden");});
+      renderMeas();
+    };
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+  e.target.value="";
+});
+
+(function(){
+  const cv=document.getElementById("cv");
+  function nearest(pt){
+    let best=null,bd=1e9;
+    Object.keys(M.pts).forEach(function(k){
+      const d=Math.hypot(M.pts[k][0]-pt.x, M.pts[k][1]-pt.y);
+      if(d<bd){bd=d;best=k;}
+    });
+    const tol=(M.img?M.img.naturalWidth:1000)*0.02;
+    return bd<tol?best:null;
+  }
+  function down(e){ if(!M.img) return; e.preventDefault();
+    const pt=evtPoint(e); const hit=nearest(pt);
+    if(hit){ M.drag=hit; } else { const s=nextStep(); if(s){ M.drag=s.k; } }
+    if(M.drag){ M.pts[M.drag]=[pt.x,pt.y];
+      if(M.order.indexOf(M.drag)<0) M.order.push(M.drag);
+      showLoupe(pt); renderMeas(); } }
+  function move(e){ if(!M.img||!M.drag) return; e.preventDefault();
+    const pt=evtPoint(e); M.pts[M.drag]=[pt.x,pt.y]; showLoupe(pt); renderMeas(); }
+  function up(){ M.drag=null; hideLoupe(); }
+  cv.addEventListener("mousedown",down); cv.addEventListener("touchstart",down,{passive:false});
+  window.addEventListener("mousemove",move); window.addEventListener("touchmove",move,{passive:false});
+  window.addEventListener("mouseup",up); window.addEventListener("touchend",up);
+})();
+
+document.getElementById("btn-undo").addEventListener("click",function(){
+  const k=M.order.pop(); if(k) delete M.pts[k]; renderMeas();});
+document.getElementById("btn-reset").addEventListener("click",function(){
+  M.pts={}; M.order=[]; renderMeas();});
+document.getElementById("btn-apply").addEventListener("click",function(){
+  const r=measured(); if(!r) return;
+  document.getElementById("i-ldfa").value=r.ldfa.toFixed(1);
+  document.getElementById("i-mpta").value=r.mpta.toFixed(1);
+  document.getElementById("i-hka").value=r.hka.toFixed(1);
+  ["r-ldfa","r-mpta"].forEach(function(id){
+    const rg=document.getElementById(id), n=document.getElementById(id.replace("r-","i-"));
+    rg.value=Math.min(parseFloat(rg.max),Math.max(parseFloat(rg.min),parseFloat(n.value)));
+    paintTrack(rg);});
+  read(); renderPlan();
+  document.querySelector('nav button[data-tab="case"]').click();
+});
+
+(function(){
+  const z=document.getElementById("r-zoom");
+  function apply(){ S.zoom=parseFloat(z.value)||1;
+    document.getElementById("zoomval").textContent=fmt(S.zoom)+"\u00D7";
+    paintTrack(z); renderPlan(); }
+  z.addEventListener("input",apply);
+  paintTrack(z);
+  document.getElementById("zoomval").textContent=fmt(S.zoom)+"\u00D7";
+})();
+linkSlider("i-hka","r-hka");
+linkSlider("i-slope","r-slope");
+
+/* ================= published trials =================
+   Randomised comparisons of alignment strategy, with the primary joint
+   awareness and patient-reported figures. Deliberately includes the trials
+   that found no difference. MCID for FJS-12 is about 16.6 points, so a
+   statistically significant gap below that is not necessarily one a patient
+   would notice. */
+const STUDIES=[
+ { id:"koutp", verdict:"partial", forA:["ka","ma"],
+   jr:"Knee Surg Sports Traumatol Arthrosc, 2026",
+   url:"https://esskajournals.onlinelibrary.wiley.com/doi/10.1002/ksa.12751",
+   en:{ t:"Kinematic vs mechanical alignment in a medial-pivot knee, ordinary instruments",
+        s:"The closest trial to this setting: a medial-pivot implant, conventional instrumentation, no robot. Joint awareness and pain scores favoured kinematic alignment, and the varus subgroup improved most. The authors were careful to note the gap was smaller than the amount a patient typically notices.",
+        f:["FJS-12 +11.4 points","below the 16.6 MCID","varus subgroup did best"] },
+   lt:{ t:"Kinematinė ir mechaninė ašis medialinio sukimo kelyje, įprasti instrumentai",
+        s:"Artimiausias šiai situacijai tyrimas: medialinio sukimo implantas, įprasta instrumentacija, be roboto. Sąnario jutimo ir skausmo rodikliai buvo palankesni kinematinei ašiai, o varus pogrupiui – labiausiai. Autoriai pažymėjo, kad skirtumas mažesnis nei tas, kurį pacientas paprastai pastebi.",
+        f:["FJS-12 +11,4 taško","mažiau nei 16,6 MCID","varus pogrupis – geriausiai"] } },
+
+ { id:"insall", verdict:"yes", forA:["ika","ma"],
+   jr:"J Arthroplasty, 2025 — Insall Award",
+   url:"https://www.arthroplastyjournal.org/article/S0883-5403(25)00193-7/fulltext",
+   en:{ t:"Functional vs mechanical alignment, split by CPAK phenotype",
+        s:"Across everyone the two approaches came out level. But when the authors looked only at knees that were constitutionally varus — CPAK type I — the personalised group scored clearly better. Far fewer soft-tissue releases were needed.",
+        f:["All patients 70.1 vs 64.4 (ns)","CPAK I: 71.3 vs 56.8","releases 16% vs 65%"] },
+   lt:{ t:"Funkcinė ir mechaninė ašis, suskirsčius pagal CPAK fenotipą",
+        s:"Bendrai abu būdai buvo lygiaverčiai. Tačiau vertinant tik konstituciškai varus kelius – CPAK I tipą – asmeninio plano grupė pasiekė aiškiai geresnius rezultatus. Prireikė gerokai mažiau minkštųjų audinių atpalaidavimo.",
+        f:["Visi pacientai 70,1 ir 64,4 (nereikšm.)","CPAK I: 71,3 ir 56,8","atpalaidavimai 16% ir 65%"] } },
+
+ { id:"rka", verdict:"yes", forA:["rka","ma"],
+   jr:"Randomised controlled trial, robotic rKA",
+   url:"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12523575/",
+   en:{ t:"Restricted kinematic vs mechanical alignment",
+        s:"Patients in the restricted kinematic group recovered movement faster in the first two weeks and had less pain early on. At one year their joint awareness scores were higher, though both groups scored very well.",
+        f:["FJS-12 94.8 vs 91.9","faster early recovery","less early pain"] },
+   lt:{ t:"Ribojama kinematinė ir mechaninė ašis",
+        s:"Ribojamos kinematinės ašies grupės pacientai greičiau atgavo judesį per pirmas dvi savaites ir jautė mažiau skausmo pradžioje. Po metų jų sąnario jutimo rodikliai buvo aukštesni, nors abi grupės pasiekė labai gerus rezultatus.",
+        f:["FJS-12 94,8 ir 91,9","greitesnis atsigavimas","mažiau ankstyvo skausmo"] } },
+
+ { id:"bauer", verdict:"no", forA:["ama","rka","ma"],
+   jr:"Knee Surg Sports Traumatol Arthrosc, 2026",
+   url:"https://esskajournals.onlinelibrary.wiley.com/doi/10.1002/ksa.70004",
+   en:{ t:"Modified kinematic vs mechanical alignment after rehabilitation",
+        s:"This trial found no difference at all. Both groups improved substantially and equally on every measure, and joint awareness at one year was the same.",
+        f:["FJS at 12 months: no difference","both groups improved equally"] },
+   lt:{ t:"Modifikuota kinematinė ir mechaninė ašis po reabilitacijos",
+        s:"Šis tyrimas skirtumo nerado. Abi grupės pagerėjo ženkliai ir vienodai pagal visus rodiklius, o sąnario jutimas po metų buvo toks pat.",
+        f:["FJS po 12 mėn.: skirtumo nėra","abi grupės pagerėjo vienodai"] } },
+
+ { id:"bilat", verdict:"yes", forA:["ka","ma"],
+   jr:"J Arthroplasty, 2024",
+   url:"https://www.arthroplastyjournal.org/article/S0883-5403(24)00261-4/abstract",
+   en:{ t:"Both knees replaced at once, one each way",
+        s:"Sixty-five patients had one knee done each way on the same day, so each person is their own comparison. Scores favoured the calipered kinematic side.",
+        f:["same patient, both methods","calipered technique"] },
+   lt:{ t:"Abu keliai operuoti vienu metu, po vieną kiekvienu būdu",
+        s:"Šešiasdešimt penkiems pacientams tą pačią dieną vienas kelis operuotas vienu, kitas – kitu būdu, todėl kiekvienas žmogus yra pats sau palyginimas. Rodikliai buvo palankesni kaliperinei kinematinei pusei.",
+        f:["tas pats pacientas, abu būdai","kaliperinė technika"] } }
+];
+
+function renderStudies(){
+  const w=document.getElementById("studies"); if(!w) return;
+  w.innerHTML="";
+  const list=STUDIES.filter(function(s){return s.forA.indexOf(S.patStrat)>=0;});
+  const lead=document.createElement("p"); lead.className="lede";
+  lead.textContent=t("ev.lead."+S.patStrat)+" "+t(list.length<2?"ev.few":"ev.some",{n:list.length});
+  w.appendChild(lead);
+  list.forEach(function(st){
+    const c=LANG==="lt"?st.lt:st.en;
+    const d=document.createElement("div"); d.className="study";
+    d.innerHTML='<span class="verdict v-'+st.verdict+'">'+esc(t("ev."+st.verdict))+'</span>'
+      +'<div class="jr">'+esc(st.jr)+'</div>'
+      +'<h4>'+esc(c.t)+'</h4><p>'+esc(c.s)+'</p>'
+      +'<div class="fig">'+c.f.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+'</div>'
+      +'<div class="acts">'
+      +'<a href="'+st.url+'" target="_blank" rel="noopener noreferrer">'+esc(t("ev.read"))+'</a>'
+      +'<button data-share="'+st.id+'">'+esc(t("ev.share"))+'</button></div>';
+    w.appendChild(d);
+  });
+  w.querySelectorAll("button[data-share]").forEach(function(b){
+    b.addEventListener("click",function(){
+      const st=STUDIES.filter(function(x){return x.id===b.dataset.share;})[0];
+      const c=LANG==="lt"?st.lt:st.en;
+      const text=c.t+" \u2014 "+st.jr+"\n"+st.url;
+      if(navigator.share){ navigator.share({title:c.t,text:c.t,url:st.url}).catch(function(){}); return; }
+      const done=function(){ b.textContent=t("ev.copied"); b.className="done";
+        setTimeout(function(){ b.textContent=t("ev.share"); b.className=""; },1800); };
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done,function(){});
+      } else {
+        const ta=document.createElement("textarea"); ta.value=text;
+        ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+        ta.select(); try{document.execCommand("copy"); done();}catch(e){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+}
+
+/* ================= CPAK phenotype =================
+   aHKA = MPTA - LDFA (negative varus); JLO = MPTA + LDFA.
+   Bands: aHKA at ±2°, JLO at 177° and 183°. The dashed box is ±1° of
+   measurement uncertainty — reported reliability of CPAK typing in
+   osteoarthritic knees is poor to moderate, so a knee near a band edge
+   may be typed differently by a second observer. */
+const CPAK_ROMAN=["","I","II","III","IV","V","VI","VII","VIII","IX"];
+/* Population distribution. The nine-type breakdown is a single European
+   osteoarthritic cohort, which is the only complete European set published;
+   pooled figures from the systematic review are held alongside so the
+   disagreement is visible rather than smoothed over. Distribution varies
+   markedly by geography: type I is 51.3% of arthritic knees in Asia against
+   32.8% in Europe. */
+const CPAK_PREV={1:30.7,2:21.0,3:5.0,4:25.9,5:11.2,6:2.8,7:2.4,8:0.6,9:0.4};
+const CPAK_POOLED={1:32.8,2:23.1,4:12.7};
+/* Proportion achieving optimal balance, kinematic vs mechanical alignment,
+   from the paper that introduced CPAK. Reported for these types only. */
+const CPAK_BAL={1:[100,15],2:[78,46],4:[89,0]};
+function cpakOf(a,j){
+  const A=a<=-2?0:a>=2?2:1, J=j<=177?0:j>=183?2:1;
+  return {A:A, J:J, type:[[1,2,3],[4,5,6],[7,8,9]][J][A]};
+}
+/* Plain name for the phenotype: the aHKA band plus the joint line
+   orientation, e.g. "varus, apex distal". The roman numeral alone tells a
+   surgeon nothing without the key in front of them. */
+function cpakName(cp){
+  // Grid gutter labels are abbreviated to fit; the chip gets the full wording.
+  return t(["cp.varus","cp.neutral","cp.valgus"][cp.A])+", "
+       + t(["cp.adFull","cp.jn","cp.apFull"][cp.J]);
+}
+function cpakSens(a,j){
+  const out={};
+  [a-1,a+1].forEach(function(av){ [j-1,j+1].forEach(function(jv){
+    out[cpakOf(av,jv).type]=1; }); });
+  return Object.keys(out).map(Number).sort(function(x,y){return x-y;});
+}
+function renderCpak(){
+  const a=r1(S.mpta-S.ldfa), j=r1(S.mpta+S.ldfa), intra=r1(S.hka-a);
+  const cp=cpakOf(a,j), sens=cpakSens(a,j);
+  const conf=Math.abs(intra)<2?"high":Math.abs(intra)<=4?"moderate":"low";
+
+  document.getElementById("cpchips").innerHTML=
+    '<span class="chip" style="background:var(--drape);color:var(--teal)">CPAK <b style="color:var(--teal)">'
+      +CPAK_ROMAN[cp.type]+'</b> \u00B7 '+esc(cpakName(cp))+'</span>'
+   +'<span class="chip">aHKA <b>'+sgn(a)+'\u00B0</b></span>'
+   +'<span class="chip">JLO <b>'+fmt(j)+'\u00B0</b></span>'
+   +'<span class="chip">'+esc(t("conf."+conf))+'</span>'
+   +'<span class="chip">'+esc(t("cp.prev",{v:fmt(CPAK_PREV[cp.type])}))+'</span>';
+
+  // ---- grid ----
+  // Axis ranges cover the observed spread in arthritic knees. A narrower
+  // window pins real cases to the frame edge, where the uncertainty box
+  // then overlaps the border and becomes unreadable.
+  const X0=84,Y0=30,W=238,H=186;
+  const A_LO=-10,A_HI=10,J_LO=165,J_HI=195;
+  const ax=function(v){return X0+(clamp(v,A_LO,A_HI)-A_LO)/(A_HI-A_LO)*W;};
+  const jy=function(v){return Y0+(clamp(v,J_LO,J_HI)-J_LO)/(J_HI-J_LO)*H;};
+  const colX=[X0, ax(-2), ax(2), X0+W];
+  const rowY=[Y0, jy(177), jy(183), Y0+H];
+  let g="";
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const ty=[[1,2,3],[4,5,6],[7,8,9]][r][c];
+    const on=(r===cp.J&&c===cp.A);
+    const pv=CPAK_PREV[ty];
+    const shade=0.05+0.5*Math.min(1,pv/32);
+    // Text darkens as the fill darkens, so every cell stays legible.
+    const ink = on ? "#0F6E56" : (shade>0.34 ? "#3F5C52" : "#9C9A90");
+    g+='<rect x="'+(colX[c]+1.5)+'" y="'+(rowY[r]+1.5)+'" width="'+(colX[c+1]-colX[c]-3)
+      +'" height="'+(rowY[r+1]-rowY[r]-3)+'" rx="7" fill="'+(on?"#E1F5EE":"#0F6E56")
+      +'" fill-opacity="'+(on?1:shade.toFixed(2))
+      +'" stroke="'+(on?"#0F6E56":"#E4E2DA")+'" stroke-width="'+(on?"1.8":"0.5")+'"/>';
+    const cxm=(colX[c]+colX[c+1])/2, cym=(rowY[r]+rowY[r+1])/2;
+    g+='<text x="'+cxm+'" y="'+(cym+1)+'" text-anchor="middle" font-size="14" font-weight="'+(on?"600":"500")
+      +'" fill="'+ink+'" font-family="sans-serif">'+CPAK_ROMAN[ty]+'</text>';
+    g+='<text x="'+cxm+'" y="'+(cym+16)+'" text-anchor="middle" font-size="10.5"'
+      +' font-family="ui-monospace,monospace" fill="'+ink+'" fill-opacity="0.85">'
+      +esc(fmt(pv))+'%</text>';
+  }
+  [[t("cp.varus"),(colX[0]+colX[1])/2],[t("cp.neutral"),(colX[1]+colX[2])/2],
+   [t("cp.valgus"),(colX[2]+colX[3])/2]].forEach(function(h){
+    g+='<text x="'+h[1]+'" y="'+(Y0-10)+'" text-anchor="middle" font-size="11" fill="#888780" font-family="sans-serif">'+esc(h[0])+'</text>';});
+  [[t("cp.ad"),(rowY[0]+rowY[1])/2],[t("cp.jn"),(rowY[1]+rowY[2])/2],
+   [t("cp.ap"),(rowY[2]+rowY[3])/2]].forEach(function(h){
+    g+='<text x="'+(X0-9)+'" y="'+(h[1]+4)+'" text-anchor="end" font-size="10.5" fill="#888780" font-family="sans-serif">'+esc(h[0])+'</text>';});
+
+  // Uncertainty box, clamped so it never spills outside the plot.
+  const bx1=Math.max(X0,ax(a-1)), bx2=Math.min(X0+W,ax(a+1));
+  const by1=Math.max(Y0,jy(j-1)), by2=Math.min(Y0+H,jy(j+1));
+  g+='<rect x="'+bx1.toFixed(1)+'" y="'+by1.toFixed(1)+'" width="'+(bx2-bx1).toFixed(1)
+    +'" height="'+(by2-by1).toFixed(1)+'" fill="#7F77DD" fill-opacity="0.16" stroke="#534AB7" stroke-width="1" stroke-dasharray="3 3" rx="3"/>';
+  g+='<circle cx="'+ax(a).toFixed(1)+'" cy="'+jy(j).toFixed(1)+'" r="5" fill="#0F6E56" stroke="#fff" stroke-width="1.8"/>';
+
+  // Axis captions. The phenotype name is already on the chip above, so it is
+  // not repeated here — that repetition is what collided in the old layout.
+  g+='<text x="'+(X0+W/2)+'" y="'+(Y0+H+20)+'" text-anchor="middle" font-size="11" fill="#888780" font-family="sans-serif">aHKA</text>';
+  g+='<text x="'+X0+'" y="'+(Y0+H+38)+'" font-size="10.5" fill="#A8A497" font-family="sans-serif">'
+    +esc(t("cp.src"))+'</text>';
+  document.getElementById("cpgrid").innerHTML=g;
+
+  // ---- split bar ----
+  const b=Math.abs(a), i=Math.abs(intra), tot=b+i;
+  const pb=tot>0?(b/tot*100):50;
+  document.getElementById("cp-bony").style.width=pb+"%";
+  document.getElementById("cp-intra").style.width=(100-pb)+"%";
+  document.getElementById("cp-bonyL").textContent=t("cp.bony",{v:fmt(b)});
+  document.getElementById("cp-intraL").textContent=t("cp.intra",{v:fmt(i)});
+
+  // ---- sensitivity ----
+  const sn=document.getElementById("cpsens");
+  let notes = sens.length>1
+    ? '<div class="warnbox w-edge">'+esc(t("cp.sens",{n:sens.map(function(x){return CPAK_ROMAN[x];}).join(", ")}))+'</div>'
+    : "";
+  if(CPAK_POOLED[cp.type]!==undefined)
+    notes+='<div class="warnbox w-info">'+esc(t("cp.pooled",
+      {v:fmt(CPAK_PREV[cp.type]),p:fmt(CPAK_POOLED[cp.type])}))+'</div>';
+  if(CPAK_BAL[cp.type])
+    notes+='<div class="warnbox w-info">'+esc(t("cp.bal",
+      {k:CPAK_BAL[cp.type][0],m:CPAK_BAL[cp.type][1]}))+'</div>';
+  sn.innerHTML=notes;
+}
+
+/* ================= theatre: plan becomes the target =================
+   Targets are the guide depths from the current plan; the caliper slab is
+   thinner by the blade. Tolerance follows the calipered technique: within
+   0.5 mm, marginal to 1.0 mm, outside beyond that. */
+const TH_ROWS=[
+ {k:"dm", lab:"th.dm", get:function(c){return c.distal?c.distal.med:null;}},
+ {k:"dl", lab:"th.dl", get:function(c){return c.distal?c.distal.lat:null;}},
+ {k:"pm", lab:"th.pm", get:function(c){return c.posterior.med;}},
+ {k:"pl", lab:"th.pl", get:function(c){return c.posterior.lat;}},
+ {k:"tm", lab:"th.tm", get:function(c){return c.tibia.med;}},
+ {k:"tl", lab:"th.tl", get:function(c){return c.tibia.lat;}}
+];
+const TH_CHECKS=[
+ {k:"flexTrap", q:"th.q1"}, {k:"extBal", q:"th.q2"}, {k:"rotation", q:"th.q3"}
+];
+const TH={meas:{}, conf:{}};
+function thStatus(d){ if(d===null||Number.isNaN(d)) return "idle";
+  const a=Math.abs(d); return a<=0.5?"within":a<=1.0?"edge":"bad"; }
+function thPill(s){ return '<span class="pill p-'+(s==="idle"?"idle":s==="within"?"within":s==="edge"?"edge":"bad")
+  +'">'+esc(t("st."+s))+'</span>'; }
+
+/* Theatre rows are built once and then updated in place. Rebuilding the DOM
+   on every input event destroys the slider being dragged, which drops the
+   pointer capture and makes the control jump after a single step. */
+function thTarget(c,r){
+  const guide=r.get(c);
+  if(guide===null) return null;
+  return S.blade ? r1(guide-EVO.blade) : guide;
+}
+function thRowUpdate(k){
+  const c=cuts(S.strat);
+  const r=TH_ROWS.filter(function(x){return x.k===k;})[0];
+  const card=document.querySelector('.thc[data-row="'+k+'"]');
+  if(!r||!card) return;
+  const tgt=thTarget(c,r), m=TH.meas[k];
+  const d=(tgt===null||m===undefined||m===null)?null:r1(m-tgt);
+  const st=thStatus(d);
+  card.querySelector(".thtv").textContent = tgt===null?"\u2014":fmt(tgt);
+  const big=card.querySelector(".big");
+  big.textContent = (m===undefined||m===null)?"\u2014":fmt(m);
+  big.className="big "+st;
+  card.querySelector(".thd").textContent = d===null?"":sgn(d)+" mm";
+  card.querySelector(".pill").className="pill p-"+(st==="idle"?"idle":st==="within"?"within":st==="edge"?"edge":"bad");
+  card.querySelector(".pill").textContent=t("st."+st);
+  paintTrack(card.querySelector("input[type=range]"));
+}
+function thSummary(){
+  const c=cuts(S.strat);
+  const states=TH_ROWS.map(function(r){
+    const tgt=thTarget(c,r), m=TH.meas[r.k];
+    return (tgt===null||m===undefined||m===null)?"idle":thStatus(r1(m-tgt));});
+  const bad=states.filter(function(x){return x==="bad";}).length;
+  const idle=states.filter(function(x){return x==="idle";}).length;
+  document.getElementById("theasum").innerHTML =
+    bad>0 ? '<div class="warnbox w-bad">'+esc(t("th.bad",{n:bad}))+'</div>'
+    : idle>0 ? '' : '<div class="warnbox w-ok">'+esc(t("th.ok"))+'</div>';
+}
+function renderTheatre(){
+  const c=cuts(S.strat);
+  document.querySelectorAll("[data-blade]").forEach(function(b){
+    b.setAttribute("aria-pressed",String(S.blade));});
+  ["thbladenote","bladenote"].forEach(function(id){
+    const bn=document.getElementById(id);
+    if(bn) bn.textContent = S.blade ? t("th.bladeOn",{v:fmt(EVO.blade,2)}) : t("th.bladeOff");
+  });
+  document.getElementById("theachips").innerHTML=
+    '<span class="chip">'+esc(t("s."+S.strat+"F"))+'</span>'
+   +'<span class="chip">'+esc(LANG==="lt"?"Dydis":"Size")+' <b>'+S.size+'</b></span>'
+   +'<span class="chip">'+esc(t("c.blade"))+' <b>'+fmt(EVO.blade,2)+'</b> mm</span>';
+
+  const tb=document.getElementById("theatbl");
+  // Build the cards only when they do not already exist.
+  if(tb.childElementCount!==TH_ROWS.length){
+    tb.innerHTML="";
+    TH_ROWS.forEach(function(r){
+      const card=document.createElement("div");
+      card.className="thc"; card.dataset.row=r.k;
+      card.innerHTML=
+        '<div class="thh"><span>'+esc(t(r.lab))+'</span>'
+        +'<span class="tht">'+esc(t("th.tgt"))+' <b class="thtv">\u2014</b> mm</span></div>'
+        +'<div class="thv"><span class="big idle">\u2014</span>'
+        +'<span class="thd"></span><span class="pill p-idle"></span></div>'
+        +'<input class="range thr" type="range" min="2" max="16" step="0.1">';
+      const inp=card.querySelector("input");
+      const tgt=thTarget(c,r);
+      inp.value = (TH.meas[r.k]!==undefined&&TH.meas[r.k]!==null) ? TH.meas[r.k] : (tgt===null?8:tgt);
+      inp.setAttribute("aria-label",t(r.lab));
+      // Only this row is touched while dragging, so the control keeps capture.
+      inp.addEventListener("input",function(){
+        TH.meas[r.k]=parseFloat(inp.value);
+        thRowUpdate(r.k); thSummary();
+      });
+      tb.appendChild(card);
+    });
+  } else {
+    // Plan changed: refresh labels and re-seat any untouched sliders.
+    TH_ROWS.forEach(function(r){
+      const card=tb.querySelector('.thc[data-row="'+r.k+'"]');
+      card.querySelector(".thh span").textContent=t(r.lab);
+      card.querySelector(".tht").innerHTML=esc(t("th.tgt"))+' <b class="thtv">\u2014</b> mm';
+      if(TH.meas[r.k]===undefined||TH.meas[r.k]===null){
+        const tgt=thTarget(c,r);
+        card.querySelector("input").value = tgt===null?8:tgt;
+      }
+    });
+  }
+  TH_ROWS.forEach(function(r){ thRowUpdate(r.k); });
+  thSummary();
+}
+
+/* ================= case log ================= */
+const LOGKEY="phenoknee.cases.v2";
+const LOG={cases:[], next:1};
+function logLoad(){ try{ const raw=localStorage.getItem(LOGKEY);
+  if(raw){ const o=JSON.parse(raw); LOG.cases=o.cases||[]; LOG.next=o.next||1; } }catch(e){} }
+function logSave(){ try{ localStorage.setItem(LOGKEY,JSON.stringify({schema:2,cases:LOG.cases,next:LOG.next})); }catch(e){} }
+function saveCase(){
+  const c=cuts(S.strat);
+  LOG.cases.push({
+    id:LOG.next++, createdAt:new Date().toISOString(),
+    side:S.side, implant:"Evolution MP", size:S.size, strategy:S.strat,
+    ldfa:S.ldfa, mpta:S.mpta, measuredHka:S.hka, slope:S.slope,
+    ahka:r1(S.mpta-S.ldfa), intraArticular:r1(S.hka-r1(S.mpta-S.ldfa)),
+    cpakType:cpakOf(r1(S.mpta-S.ldfa),r1(S.mpta+S.ldfa)).type,
+    wear:JSON.parse(JSON.stringify(S.wear)),
+    planned:{ldfa:c.p.ldfa,mpta:c.p.mpta,hka:c.hka},
+    cuts:{distal:c.distal,posterior:c.posterior,tibia:c.tibia},
+    measured:JSON.parse(JSON.stringify(TH.meas)),
+    confirmations:JSON.parse(JSON.stringify(TH.conf))
+  });
+  logSave(); renderLog();
+  document.querySelector('nav button[data-tab="log"]').click();
+}
+function renderLog(){
+  const st=document.getElementById("logstats");
+  const n=LOG.cases.length;
+  const byStrat={};
+  LOG.cases.forEach(function(x){ byStrat[x.strategy]=(byStrat[x.strategy]||0)+1; });
+  let deltas=[];
+  LOG.cases.forEach(function(x){
+    TH_ROWS.forEach(function(r){
+      const m=x.measured&&x.measured[r.k];
+      const src=r.k[0]==="d"?x.cuts.distal:r.k[0]==="p"?x.cuts.posterior:x.cuts.tibia;
+      if(!src||m===undefined||m===null) return;
+      const tgt=(r.k[1]==="m")?src.med:src.lat;
+      deltas.push(Math.abs(m-(tgt-EVO.blade)));
+    });
+  });
+  const mad=deltas.length?r1(deltas.reduce(function(a,b){return a+b;},0)/deltas.length):null;
+  st.innerHTML='<span class="chip">'+esc(LANG==="lt"?"Atvejai":"Cases")+' <b>'+n+'</b></span>'
+   +(mad===null?"":'<span class="chip">'+esc(LANG==="lt"?"Vid. nuokrypis":"Mean deviation")+' <b>'+fmt(mad)+'</b> mm</span>')
+   +Object.keys(byStrat).map(function(k){
+      return '<span class="chip">'+esc(t("s."+k))+' <b>'+byStrat[k]+'</b></span>';}).join("");
+  const w=document.getElementById("loglist"); w.innerHTML="";
+  if(n===0){ w.innerHTML='<div class="logempty">'+esc(t("lg.empty"))+'</div>'; return; }
+  LOG.cases.slice().reverse().forEach(function(x){
+    const row=document.createElement("div"); row.className="case";
+    row.innerHTML='<div><div>'+esc(t("lg.case"))+' '+String(x.id).padStart(3,"0")+' · '
+      +esc(t(x.side==="right"?"c.right":"c.left").toLowerCase())+'</div>'
+      +'<div class="meta">'+esc(t("s."+x.strategy))+' · '+esc(LANG==="lt"?"dydis":"size")+' '+x.size
+      +' · LDFA '+fmt(x.ldfa)+' · MPTA '+fmt(x.mpta)+'</div></div>'
+      +'<div class="num">'+sgn(x.ahka)+'°</div>';
+    w.appendChild(row);
+  });
+}
+function logExport(){
+  const b=new Blob([JSON.stringify({schema:2,exported:new Date().toISOString(),
+    cases:LOG.cases,next:LOG.next},null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+  a.download="phenoknee-cases-"+new Date().toISOString().slice(0,10)+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function logImport(f){
+  const rd=new FileReader();
+  rd.onload=function(){ try{ const o=JSON.parse(rd.result); if(!o.cases) throw 0;
+    const have={}; LOG.cases.forEach(function(x){have[x.id]=1;});
+    o.cases.forEach(function(x){ if(!have[x.id]) LOG.cases.push(x); });
+    LOG.next=Math.max(LOG.next,o.next||1);
+    LOG.cases.sort(function(a,b){return a.id-b.id;});
+    logSave(); renderLog(); }catch(e){} };
+  rd.readAsText(f);
+}
+
+/* ================= patient view ================= */
+const PATIENT_VIEW_EXAGGERATION=3.5;
+/* The patient chooses nothing here; the surgeon flips between approaches and
+   the drawing shows how the leg would end up. Labels stay plain-language, with
+   the technical name kept small for the surgeon. */
+/* The coronal approaches are a continuum of how much correction is applied,
+   from fully straightened to left as built, so a single slider reads more
+   naturally than five buttons and shows they are degrees of one choice.
+   Inverse kinematic alignment is not a point on that axis — the femur is set
+   by gap balancing rather than by a chosen amount — so it sits apart. */
+const PAT_SCALE=["ma","ama","rka","ka"];
+/* Short, balanced notes on each approach. Every entry carries both what it
+   offers and what to watch, so no option is presented as the obvious choice. */
+const ALIGN_NOTES={
+ ma:{ pros:["pn.ma1","pn.ma2","pn.ma3"], cons:["cn.ma1","cn.ma2","cn.ma3"] },
+ ama:{ pros:["pn.ama1","pn.ama2"], cons:["cn.ama1","cn.ama2"] },
+ rka:{ pros:["pn.rka1","pn.rka2","pn.rka3"], cons:["cn.rka1","cn.rka2"] },
+ ka:{ pros:["pn.ka1","pn.ka2","pn.ka3"], cons:["cn.ka1","cn.ka2"] },
+ ika:{ pros:["pn.ika1","pn.ika2"], cons:["cn.ika1","cn.ika2"] }
+};
+function renderAlignNotes(){
+  const n=ALIGN_NOTES[S.patStrat]||{pros:[],cons:[]};
+  const fill=function(id,keys){
+    const el=document.getElementById(id); el.innerHTML="";
+    keys.forEach(function(k){
+      const li=document.createElement("li"); li.textContent=t(k); el.appendChild(li);
+    });
+  };
+  fill("pa-pros",n.pros); fill("pa-cons",n.cons);
+}
+function renderPatStrip(){
+  const onScale=PAT_SCALE.indexOf(S.patStrat);
+  const r=document.getElementById("r-align");
+  if(onScale>=0){ r.value=onScale; r.disabled=false; } else { r.disabled=true; }
+  paintTrack(r);
+  document.getElementById("pa-abbr").textContent=t("ab."+S.patStrat);
+  document.getElementById("pa-full").textContent=t("s."+S.patStrat+"F");
+  document.getElementById("pa-name").textContent=t("pp."+S.patStrat);
+  renderAlignNotes();
+  document.getElementById("btn-ika").setAttribute("aria-pressed",String(S.patStrat==="ika"));
+}
+function renderPatient(){
+  const p=planned(S.patStrat);
+  // Where the limb ends up under this approach. iKA leaves the femur to gap
+  // balancing, so its result sits between restricted kinematic and neutral.
+  const resHka = (p.ldfa===null) ? r1((S.hka + 0)/2) : r1(p.mpta - p.ldfa);
+  document.getElementById("p-head").textContent =
+    t(resHka<=-2?"pv.varus":resHka>=2?"pv.valgus":"pv.neutral");
+  document.getElementById("p-lead").textContent = t("pl."+S.patStrat);
+  const HX=160,HY=40,AY=262,KY=151,L=AY-HY;
+  const half=(resHka*PATIENT_VIEW_EXAGGERATION)/2;
+  const dx=(L/2)*Math.tan(half*Math.PI/180);
+  const lat=(S.side==="right")?-1:1;
+  const KX=HX+lat*Math.abs(dx)*(resHka<0?1:-1);
+  const ankleX=HX+(KX-HX)*0.25;
+  const hip={x:HX,y:HY},knee={x:KX,y:KY},ankle={x:ankleX,y:AY};
+  function interp(pts,x){ for(let i=0;i<pts.length-1;i++){ if(x<=pts[i+1][0]){
+    const a0=pts[i],a1=pts[i+1],f=(x-a0[0])/((a1[0]-a0[0])||1); return a0[1]+(a1[1]-a0[1])*f; } }
+    return pts[pts.length-1][1]; }
+  /* Half-widths as a fraction of hip-to-ankle length, derived from segment
+     circumferences: mid-thigh ~55 cm, knee ~37 cm, max calf ~37 cm, ankle
+     ~22 cm. The calf must swell below the knee — without that the shank reads
+     as a straight taper, which was the main silhouette error. */
+  const thighW=function(f){return interp([[0,.176],[.16,.195],[.45,.170],[.75,.145],[1,.131]],f)*L/2;};
+  const shankW=function(f){return interp([[0,.131],[.10,.126],[.30,.131],[.58,.108],[.84,.086],[1,.078]],f)*L/2;};
+  function segp(p0,p1,wf,off,medF){
+    const N=24,left=[],right=[];
+    for(let i=0;i<=N;i++){ const f=i/N;
+      const cx=p0.x+(p1.x-p0.x)*f+lat*off*(1-f), cy=p0.y+(p1.y-p0.y)*f, w=wf(f);
+      const med=medF?1+medF*Math.max(0,Math.sin(f*Math.PI))*0.10:1;
+      left.push([cx-w*(lat<0?1:med),cy]); right.push([cx+w*(lat<0?med:1),cy]); }
+    const pts=left.concat(right.reverse());
+    return "M"+pts.map(function(q){return q[0].toFixed(1)+","+q[1].toFixed(1);}).join(" L")+" Z"; }
+  function contour(p0,p1,wf,off,side,lo,hi){
+    const N=14,pts=[];
+    for(let i=0;i<=N;i++){ const f=lo+(hi-lo)*i/N;
+      const cx=p0.x+(p1.x-p0.x)*f+lat*off*(1-f), cy=p0.y+(p1.y-p0.y)*f;
+      pts.push([(cx+side*wf(f)*0.52).toFixed(1),cy.toFixed(1)]); }
+    return "M"+pts.map(function(q){return q[0]+","+q[1];}).join(" L"); }
+  const OFF=6;
+  /* A front-facing foot: toes at the bottom edge, big toe on the medial side.
+     Seen from behind you would see a heel, not toes — this is the strongest
+     single cue that the figure faces the viewer. */
+  function footP(){
+    const w=shankW(1)*1.2, x=ankle.x, y=AY, b=y+19;
+    const big=lat<0?1:-1;
+    return "M"+(x-w).toFixed(1)+","+(y+2)
+     +" C"+(x-w-2).toFixed(1)+","+(y+9)+" "+(x-w-1.5).toFixed(1)+","+(b-3)+" "+(x-w*0.72).toFixed(1)+","+b
+     +" C"+(x-w*0.4).toFixed(1)+","+(b+2.6)+" "+(x-w*0.12).toFixed(1)+","+(b+(big<0?3.4:2.2))+" "+(x+w*0.12).toFixed(1)+","+(b+(big>0?3.4:2.2))
+     +" C"+(x+w*0.4).toFixed(1)+","+(b+2.6)+" "+(x+w*0.72).toFixed(1)+","+b+" "+(x+w*0.9).toFixed(1)+","+(b-2)
+     +" C"+(x+w+1.5).toFixed(1)+","+(y+10)+" "+(x+w).toFixed(1)+","+(y+5)+" "+(x+w).toFixed(1)+","+(y+2)+" Z";
+  }
+  document.getElementById("p-svg").innerHTML=
+    '<g fill="#0F6E56" fill-opacity="0.10" stroke="#0F6E56" stroke-opacity="0.35" stroke-width="1">'
+    +'<path d="'+segp(hip,knee,thighW,OFF,0)+'"/><path d="'+segp(knee,ankle,shankW,0,1)+'"/>'
+    +'<path d="'+footP()+'"/></g>'
+    +'<g fill="none" stroke="#0F6E56" stroke-opacity="0.22" stroke-width="1.2" stroke-linecap="round">'
+    +'<path d="'+contour(hip,knee,thighW,OFF,-1,.08,.92)+'"/>'
+    +'<path d="'+contour(hip,knee,thighW,OFF,1,.10,.92)+'"/>'
+    +'<path d="'+contour(knee,ankle,shankW,0,-1,.06,.55)+'"/>'
+    +'<path d="'+contour(knee,ankle,shankW,0,1,.04,.62)+'"/>'
+    +'<ellipse cx="'+KX.toFixed(1)+'" cy="'+(KY-2)+'" rx="6.5" ry="8" fill="none"/>'
+    +'<path d="M'+(ankle.x-shankW(1)-1).toFixed(1)+','+(AY-6)+' q3,5 0,9" fill="none"/>'
+    +'<path d="M'+(ankle.x+shankW(1)+1).toFixed(1)+','+(AY-4)+' q-3,4 0,8" fill="none"/></g>'
+    +'<line x1="'+HX+'" y1="'+(HY-2)+'" x2="'+HX+'" y2="'+(AY+4)+'" stroke="#888780" stroke-width="1" stroke-dasharray="5 5"/>'
+    +'<line x1="'+HX+'" y1="'+HY+'" x2="'+KX.toFixed(1)+'" y2="'+KY+'" stroke="#0F6E56" stroke-width="5" stroke-linecap="round"/>'
+    +'<line x1="'+KX.toFixed(1)+'" y1="'+KY+'" x2="'+ankleX.toFixed(1)+'" y2="'+AY+'" stroke="#0F6E56" stroke-width="5" stroke-linecap="round"/>'
+    +'<circle cx="'+HX+'" cy="'+HY+'" r="8" fill="#0F6E56"/>'
+    +'<circle cx="'+KX.toFixed(1)+'" cy="'+KY+'" r="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="3"/>'
+    +'<circle cx="'+ankleX.toFixed(1)+'" cy="'+AY+'" r="8" fill="#0F6E56"/>'
+    +'<text x="'+(lat<0?100:220)+'" y="26" text-anchor="middle" fill="#0F6E56" font-size="12" font-family="sans-serif">'+esc(t("pv.yours"))+'</text>'
+    +'<text x="'+(lat<0?222:98)+'" y="26" text-anchor="middle" fill="#888780" font-size="12" font-family="sans-serif">'+esc(t("pv.straight"))+'</text>';
+}
+
+document.getElementById("btn-save").addEventListener("click",saveCase);
+document.getElementById("btn-export").addEventListener("click",logExport);
+document.getElementById("btn-import").addEventListener("click",function(){
+  document.getElementById("file-log").click();});
+document.getElementById("file-log").addEventListener("change",function(e){
+  if(e.target.files[0]) logImport(e.target.files[0]); e.target.value="";});
+logLoad();
+
+(function(){
+  const r=document.getElementById("r-align");
+  r.addEventListener("input",function(){
+    S.patStrat=PAT_SCALE[parseInt(r.value,10)];
+    renderPatStrip(); renderPatient(); renderStudies();
+  });
+  document.getElementById("btn-ika").addEventListener("click",function(){
+    S.patStrat = S.patStrat==="ika" ? "ka" : "ika";
+    renderPatStrip(); renderPatient(); renderStudies();
+  });
+})();
+document.querySelectorAll("[data-view]").forEach(function(b){
+  b.addEventListener("click",function(){S.view=b.dataset.view;
+    document.querySelectorAll("[data-view]").forEach(function(x){
+      x.setAttribute("aria-pressed",String(x.dataset.view===S.view));});
+    renderPlan();});});
+document.querySelectorAll("[data-blade]").forEach(function(b){
+  b.addEventListener("click",function(){ S.blade=!S.blade;
+    b.setAttribute("aria-pressed",String(S.blade)); renderPlan(); });});
+document.querySelectorAll("[data-comp]").forEach(function(b){
+  b.addEventListener("click",function(){S.comp=b.dataset.comp;
+    document.querySelectorAll("[data-comp]").forEach(function(x){
+      x.setAttribute("aria-pressed",String(x.dataset.comp===S.comp));});
+    renderPlan();});});
+document.querySelectorAll("[data-side]").forEach(function(b){
+  b.addEventListener("click",function(){S.side=b.dataset.side;
+    document.querySelectorAll("[data-side]").forEach(function(x){
+      x.setAttribute("aria-pressed",String(x.dataset.side===S.side));});
+    renderPlan();});});
+document.querySelectorAll("nav button").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll("nav button").forEach(function(x){
+      x.setAttribute("aria-selected",String(x===b));});
+    document.querySelectorAll("section").forEach(function(s){s.classList.remove("on");});
+    document.getElementById("s-"+b.dataset.tab).classList.add("on");window.scrollTo(0,0);});});
+document.querySelectorAll(".lang button").forEach(function(b){
+  b.addEventListener("click",function(){LANG=b.dataset.lang;
+    document.querySelectorAll(".lang button").forEach(function(x){
+      x.setAttribute("aria-pressed",String(x.dataset.lang===LANG));});
+    render(); if(M.img) renderMeas();});});
+
+render();
+</script>
+</body>
+</html>
