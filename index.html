@@ -208,6 +208,10 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .fold[open]>summary::after{content:"\2212"}
 .fold[open]>summary{border-bottom:.5px solid var(--border)}
 .foldbody{padding:14px 16px 4px}
+.bone{border-radius:10px;padding:11px 13px;margin:10px 0;font-size:12.5px;line-height:1.55}
+.bone.eq{background:var(--within-bg);color:var(--within-tx)}
+.bone.uneq{background:var(--edge-bg);color:var(--edge-tx)}
+.bone .vals{font-family:var(--mono);margin-top:5px;display:block}
 .mlist{margin:0;padding-left:17px;font-size:12.5px;line-height:1.55;color:var(--bone)}
 .mlist li{margin-bottom:8px}
 .tibfold{margin:14px 0 4px}
@@ -430,6 +434,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <th data-i="p.cut">Cut</th><th data-i="p.med">Medial</th><th data-i="p.lat">Lateral</th><th data-i="p.diff">Diff</th>
   </tr></thead><tbody id="cuts"></tbody></table>
   <p class="lede" style="margin-top:8px" data-i="p.note">Upper figure is the guide depth from the articular surface. Smaller figure is the bone slab you will measure with a caliper, once the saw blade thickness is taken off.</p>
+  <div id="bonerow"></div>
   <div id="planwarn"></div>
   <details class="fold">
     <summary data-i="mt.open">Method and assumptions</summary>
@@ -448,6 +453,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <div id="theatbl"></div>
   <h2 data-i="th.checks">Confirmations</h2>
   <div id="theachecks"></div>
+  <div id="theasym"></div>
   <div id="theasum"></div>
   <details class="fold">
     <summary data-i="g.open">If the trial gaps do not match</summary>
@@ -553,6 +559,12 @@ const FEMUR_SPAN=46, TIBIA_SPAN=44, TIBIA_REF=10;
 /* Distance between the posterior condylar contact points. A difference in
    posterior cartilage wear across this span reads as component rotation. */
 const POSTERIOR_SPAN=52;
+/* The tibia is calipered at the base of the tibial spines, not out at the
+   compartments. Cartilage is intact there on both sides, so a cut parallel to
+   the native joint line reads the same medially and laterally — that equality
+   is the verification, and it only breaks when a correction tilts the plane.
+   The spine bases sit close to the midline, so the lever is short. */
+const SPINE_SPAN=20;
 const WEAR_STEPS=[0,1,2,3,4];
 
 const LT={
@@ -579,6 +591,13 @@ const LT={
  "ab.body":"\u012Eveskite kojos parametrus \u2013 programa apskai\u010Diuos kiekvieno pj\u016Bvio rezekcijos gyl\u012F pagal kiekvien\u0105 a\u0161ies atstatymo strategij\u0105. \u012Eveskite, k\u0105 i\u0161matavote kaliperiu operacin\u0117je, ir ji parodys, kur ir kiek jos i\u0161siskiria.",
  "ab.limit":"Ji skai\u010Diuoja geometrij\u0105 pagal j\u016Bs\u0173 pateiktus duomenis. Ji nematuoja kelio, nepasirenka strategijos ir nevertina, ar planas tinka pacientui.",
  "c.tibwear":"Blauzdikaulio nudilimas","c.medshort":"med.","c.latshort":"lat.",
+ "th.sym":"Medialinis ir lateralinis sutampa ties an\u010Diuk\u0173 pagrindu: skiriasi {v} mm, kaip ir numatyta plane.",
+ "th.asym":"Medialinis ir lateralinis ties an\u010Diuk\u0173 pagrindu skiriasi {v} mm; plane numatyta {p} mm. Patikrinkite kreiptuv\u0105 prie\u0161 bandinius.",
+ "ax.fem":"\u0160launikaulio mech. a\u0161is","ax.tib":"Blauzdikaulio mech. a\u0161is",
+ "fg.after":"Galūnė pavaizduota tokia, kokią palieka pjūviai \u2013 {v}\u00b0",
+ "fg.native":"Galūnė pavaizduota kaip išmatuota; šioje strategijoje šlaunikaulis nustatomas pagal tarpus",
+ "bn.eq":"Pa\u0161alinamo kaulo kiekis vienodas abiejose kiekvieno pj\u016Bvio pus\u0117se \u2013 pavir\u0161ius atkuriamas, o ne perorientuojamas.",
+ "bn.uneq":"Pa\u0161alinamo kaulo kiekis skiriasi iki {v} mm. Tai tik\u0117tina taikant korekcij\u0105. Kinematiniame plane patikrinkite, ar \u012Fvestas nudilimas nevir\u0161ija kremzl\u0117s storio ir tod\u0117l nereiškia kaulo netekties, kurios technika nekompensuoja.",
  "mt.open":"Metodas ir prielaidos",
  "mt.span":"Vienas korekcijos laipsnis ver\u010Diamas milimetrais per prielaidas: {f} mm \u0161launikaulio ir {tb} mm blauzdikaulio matavimo plot\u012F. Jei blauzdikaul\u012F matuojate ties an\u010Diuk\u0173 pagrindu, o ne skyri\u0173 centruose, tikrasis plotis ma\u017Eesnis, tod\u0117l ir skirtumas ma\u017Eesnis.",
  "mt.post":"U\u017Epakalinis nudilimas ver\u010Diamas rotacija per {v} mm u\u017Epakalini\u0173 krumpli\u0173 plot\u012F.",
@@ -636,7 +655,7 @@ const LT={
  "th.dis":"Aritmetinis jūsų įvestų reikšmių palyginimas. Neskirta klinikiniams sprendimams priimti.",
  "th.dm":"Distalinis šlaunikaulis, medialinis","th.dl":"Distalinis šlaunikaulis, lateralinis",
  "th.pm":"Užpakalinis šlaunikaulis, posteromedialinis","th.pl":"Užpakalinis šlaunikaulis, posterolateralinis",
- "th.tm":"Blauzdikaulis, medialinis","th.tl":"Blauzdikaulis, lateralinis",
+ "th.tm":"Blauzdikaulis, medialinis ties an\u010Diuk\u0173 pagrindu","th.tl":"Blauzdikaulis, lateralinis ties an\u010Diuk\u0173 pagrindu",
  "th.q1":"Ar 90° kampu tarpiklis įtemptesnis medialiai, laisvesnis lateraliai ir sukasi apie medialinį skyrių?",
  "th.q2":"Ar visiškai ištiesus varus-valgus laisvumas nereikšmingas ir medialinio bei lateralinio tarpo skirtumas neviršija 0,5 mm?",
  "th.q3":"Ar blauzdikaulio pado rotacija nustatyta 4° ribose nuo lenkimo-tiesimo plokštumos?",
@@ -704,6 +723,13 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "ax.fem":"Femoral mech. axis","ax.tib":"Tibial mech. axis",
+ "fg.after":"Limb shown as the cuts leave it — {v}\u00b0",
+ "fg.native":"Limb shown as measured; this strategy sets the femur from the gaps",
+ "th.sym":"Medial and lateral agree at the spine base: {v} mm apart, matching the planned tilt.",
+ "th.asym":"Medial and lateral differ by {v} mm at the spine base; the plan expects {p} mm. Check the guide before trialling.",
+ "bn.eq":"Bone removed is equal on both sides of every cut — the surface is being restored rather than reoriented.",
+ "bn.uneq":"Bone removed differs by up to {v} mm between sides. Expected where a correction is applied. On a kinematic plan, check whether the entered wear exceeds cartilage thickness and so represents bone loss, which the technique does not compensate.",
  "mt.open":"Method and assumptions",
  "mt.span":"One degree of correction is converted to millimetres across an assumed {f} mm femoral and {tb} mm tibial measurement span. If you caliper the tibia at the base of the spines rather than at the compartment centres, the true span is shorter and the differential smaller.",
  "mt.post":"Posterior wear is converted to rotation across a {v} mm posterior condylar span.",
@@ -780,7 +806,7 @@ const EN={
  "st.within":"Within","st.edge":"Marginal","st.bad":"Outside","st.idle":"Not entered",
  "th.dm":"Distal femur, medial","th.dl":"Distal femur, lateral",
  "th.pm":"Posterior femur, posteromedial","th.pl":"Posterior femur, posterolateral",
- "th.tm":"Tibia, medial","th.tl":"Tibia, lateral",
+ "th.tm":"Tibia, medial at spine base","th.tl":"Tibia, lateral at spine base",
  "th.q1":"At 90°, does the spacer sit tighter medially, looser laterally, and pivot about the medial compartment?",
  "th.q2":"In full extension, is varus-valgus laxity negligible and the medial-lateral gap difference within 0.5 mm?",
  "th.q3":"Is the tibial baseplate rotation set within 4° of the flexion-extension plane?",
@@ -827,7 +853,10 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,
   // against the technique guide. Flip this to true to bring it back.
   implant:false, implantEnabled:false,
   side:"right",size:4,ldfa:87,mpta:84.5,hka:-7,slope:7,
-  wear:{dm:2,dl:0,pm:1,pl:0,tm:2,tl:0},strat:"rka"};
+  // Tibial wear starts at zero: a fresh case should not arrive with a wear
+  // pattern already assumed, and zero is also the state where a kinematic plan
+  // reads equal on both sides, which is the easiest thing to sanity-check.
+  wear:{dm:2,dl:0,pm:1,pl:0,tm:0,tl:0},strat:"rka"};
 const V=id=>document.getElementById(id).value;
 const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
 function read(){
@@ -855,6 +884,10 @@ function cuts(id){
     distal:dF===null?null:{med:r1(dist-S.wear.dm+fS),lat:r1(dist-S.wear.dl-fS)},
     posterior:{med:r1(post-S.wear.pm),lat:r1(post-S.wear.pl)},
     tibia:{med:r1(TIBIA_REF-S.wear.tm-tS),lat:r1(TIBIA_REF-S.wear.tl+tS)}};
+  /* Tibial thickness at the spine base: the plane sits TIBIA_REF below the
+     native joint line, tilted by whatever correction the strategy applies. */
+  const sp=r1(SPINE_SPAN/2*TAN(dT));
+  o.spine={med:r1(TIBIA_REF-sp), lat:r1(TIBIA_REF+sp), diff:r1(-2*sp)};
   o.postDiff=r1(S.wear.pm-S.wear.pl);
   o.postRot=r1(Math.atan(Math.abs(o.postDiff)/POSTERIOR_SPAN)*180/Math.PI);
   o.hka=p.ldfa===null?null:r1(p.mpta-p.ldfa);
@@ -967,6 +1000,22 @@ function seg(tf,a,b,stroke,w,dash){
   return '<line x1="'+p[0].toFixed(1)+'" y1="'+p[1].toFixed(1)+'" x2="'+q[0].toFixed(1)
    +'" y2="'+q[1].toFixed(1)+'" stroke="'+stroke+'" stroke-width="'+w+'" stroke-linecap="round"'
    +(dash?' stroke-dasharray="'+dash+'"':'')+'/>';}
+/* Label for a mechanical axis, set beside the line so it does not sit on it. */
+function axisTag(tf,p,txt,flip){
+  const q=tf(p), dx=flip>0?10:-10;
+  const w=txt.length*5.4+10, x=q[0]+dx, y=q[1];
+  const rx=flip>0?x-4:x-w+4;
+  return '<rect x="'+rx.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" width="'+w.toFixed(1)
+   +'" height="16" rx="4" fill="#F1EFE8" fill-opacity="0.88"/>'
+   +'<text x="'+x.toFixed(1)+'" y="'+(y+3.5).toFixed(1)
+   +'" text-anchor="'+(flip>0?"start":"end")+'" font-size="10.5" font-weight="500"'
+   +' fill="#2E6B59" font-family="sans-serif">'+esc(txt)+'</text>';
+}
+function dotAt(tf,p){
+  const q=tf(p);
+  return '<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)
+   +'" r="3" fill="#2E6B59" stroke="#F1EFE8" stroke-width="1.4"/>';
+}
 function tag(tf,p,txt,anchor){const q=tf(p);
   return '<text x="'+q[0].toFixed(1)+'" y="'+q[1].toFixed(1)+'" text-anchor="'+anchor
    +'" font-size="13" font-weight="600" font-family="ui-monospace,monospace" fill="#0B5744">'+esc(txt)+'</text>';}
@@ -1001,16 +1050,33 @@ function drawFig(c){
   const gapPx=5.4*SC, fY=JOINT-gapPx/2, tY=JOINT+gapPx/2;
   const flip=S.side==="right"?1:-1;
   // Varus: hip and ankle sit medial to the knee, so both bones lean medially.
-  const bow=(S.hka<0?1:-1)*Math.abs(S.hka)/2;
-  const tfF=tfm(mid,fY,flip*bow,SC,flip), tfT=tfm(mid,tY,-flip*bow,SC,flip);
+  /* The bones are drawn at the limb alignment the selected strategy produces,
+     not at the native deformity. Once the components seat, the two cut planes
+     become parallel and the limb sits at the planned angle — so rotating each
+     bone by half the planned HKA renders the cuts parallel, which is both the
+     physical outcome and a check that the plan is self-consistent.
+     Inverse kinematic alignment leaves the femur to gap balancing, so there is
+     no planned figure; the limb stays at its measured position. */
+  /* The tibia is held still and the femur swings against it. Splitting the
+     angle between both bones made the whole leg tilt, so the change between
+     strategies read as the cuts rotating rather than the femur reorienting.
+     With the tibia fixed, the femoral axis visibly opens or closes on it, and
+     the two cut planes still come out parallel — which is what happens once
+     the components seat, and a check that the plan is self-consistent. */
+  const resH = (c.hka===null) ? S.hka : c.hka;
+  const tfF=tfm(mid,fY,-flip*resH,SC,flip), tfT=tfm(mid,tY,0,SC,flip);
   const fT=90-S.ldfa, tT=90-S.mpta;
   const ysF=function(x){return TAN(fT)*x;}, ysT=function(x){return TAN(tT)*x;};
 
   /* Light from the upper lateral side. Cortical shell darker than cancellous
      interior; condyles carry radial highlights so they read as rounded. */
   let g=defs();
-  g+=seg(tfF,[0,-80],[0,0],"#8A867A",1,"5 4");
-  g+=seg(tfT,[0,0],[0,82],"#8A867A",1,"5 4");
+  /* Mechanical axes, drawn and labelled. Each passes through its own bone's
+     joint centre, so the angle between them at the knee is the limb alignment
+     the plan produces — the femoral axis swings, the tibial one stays put.
+     Labels sit part-way along each axis rather than at its end, so they stay
+     inside the frame at every zoom level. */
+
 
   // fibula behind the tibia
   g+='<path d="'+path(tfT,fibulaPath())+'" fill="url(#shaft)" stroke="#8C8878" stroke-width="1.1" stroke-linejoin="round"/>';
@@ -1090,6 +1156,21 @@ function drawFig(c){
   var lgb=document.getElementById("lg-blade");
   if(lgb) lgb.style.display=S.blade?"flex":"none";
 
+  /* Mechanical axes are drawn last so they sit over the bones. SVG paints in
+     document order, and emitting them first put them under the bone fills,
+     where the tibial axis in particular was invisible. Each dashed line gets a
+     pale halo beneath it so it reads against bone, cartilage and cut shading. */
+  g+=seg(tfF,[0,-82],[0,2],"#F1EFE8",3.4);
+  g+=seg(tfT,[0,-2],[0,84],"#F1EFE8",3.4);
+  g+=seg(tfF,[0,-82],[0,2],"#2E6B59",1.4,"6 4");
+  g+=seg(tfT,[0,-2],[0,84],"#2E6B59",1.4,"6 4");
+  g+=dotAt(tfF,[0,0]);
+  g+=dotAt(tfT,[0,0]);
+  g+=axisTag(tfF,[0,-30],t("ax.fem"),flip);
+  g+=axisTag(tfT,[0,34],t("ax.tib"),flip);
+
+  g+='<text x="'+(W/2)+'" y="'+(336)+'" text-anchor="middle" font-size="11" fill="#8A867A" font-family="sans-serif">'
+    +esc(c.hka===null ? t("fg.native") : t("fg.after",{v:sgn(resH)}))+'</text>';
   g+='<text x="'+(flip>0?W-10:10)+'" y="24" text-anchor="'+(flip>0?"end":"start")
     +'" font-size="13" font-weight="600" fill="#2C2C2A" font-family="sans-serif">'+esc(t("ax.med"))+'</text>';
   g+='<text x="'+(flip>0?10:W-10)+'" y="24" text-anchor="'+(flip>0?"start":"end")
@@ -1546,6 +1627,41 @@ function renderStrats(){
 }
 /* These constants scale every figure the planner produces, so they are stated
    in the interface rather than left buried in the source. */
+/* What is uniform in kinematic alignment is the BONE removed — not the guide
+   depth and not the calipered slab. Both of those differ by the cartilage
+   missing on the worn side, which is why a surgeon looking for equal numbers
+   does not find them.
+
+     bone removed = guide depth - cartilage still present
+                  = (component - wear) - (native - wear)
+                  = component - native cartilage
+
+   The wear term cancels, so on an unclamped kinematic plan every surface gives
+   the same figure however worn it is. When it does not, either a correction is
+   being applied, or the entered wear exceeds cartilage thickness and so
+   represents bone loss, which the calipered technique does not compensate. */
+function boneRemoved(guide,wear,surface){
+  if(guide===null) return null;
+  const native=(surface==="tibia")?NATIVE_CARTILAGE.tibia:NATIVE_CARTILAGE.femur;
+  return r1(guide-Math.max(0,native-wear));
+}
+function renderBone(c){
+  const el=document.getElementById("bonerow"); if(!el) return;
+  const rows=[];
+  if(c.distal) rows.push([t("f.dist"),
+    boneRemoved(c.distal.med,S.wear.dm,"femur"), boneRemoved(c.distal.lat,S.wear.dl,"femur")]);
+  rows.push([t("f.post"),
+    boneRemoved(c.posterior.med,S.wear.pm,"femur"), boneRemoved(c.posterior.lat,S.wear.pl,"femur")]);
+  rows.push([t("f.tib"),
+    boneRemoved(c.tibia.med,S.wear.tm,"tibia"), boneRemoved(c.tibia.lat,S.wear.tl,"tibia")]);
+  const worst=rows.reduce(function(a,r){return Math.max(a,Math.abs(r[1]-r[2]));},0);
+  const equal=worst<=0.3;
+  el.innerHTML='<div class="bone '+(equal?"eq":"uneq")+'">'
+    + esc(equal ? t("bn.eq") : t("bn.uneq",{v:fmt(r1(worst))}))
+    + '<span class="vals">'
+    + rows.map(function(r){return esc(r[0])+" "+fmt(r[1])+" / "+fmt(r[2]);}).join("  \u00b7  ")
+    + '</span></div>';
+}
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
   el.innerHTML=[
@@ -1590,7 +1706,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCpak(); renderStudies(); renderHow(); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCpak(); renderStudies(); renderHow(); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
@@ -2082,8 +2198,8 @@ const TH_ROWS=[
  {k:"dl", lab:"th.dl", get:function(c){return c.distal?c.distal.lat:null;}},
  {k:"pm", lab:"th.pm", get:function(c){return c.posterior.med;}},
  {k:"pl", lab:"th.pl", get:function(c){return c.posterior.lat;}},
- {k:"tm", lab:"th.tm", get:function(c){return c.tibia.med;}},
- {k:"tl", lab:"th.tl", get:function(c){return c.tibia.lat;}}
+ {k:"tm", lab:"th.tm", get:function(c){return c.spine.med;}},
+ {k:"tl", lab:"th.tl", get:function(c){return c.spine.lat;}}
 ];
 const TH_CHECKS=[
  {k:"flexTrap", q:"th.q1"}, {k:"extBal", q:"th.q2"}, {k:"rotation", q:"th.q3"}
@@ -2126,6 +2242,20 @@ function thSummary(){
     return (tgt===null||m===undefined||m===null)?"idle":thStatus(r1(m-tgt));});
   const bad=states.filter(function(x){return x==="bad";}).length;
   const idle=states.filter(function(x){return x==="idle";}).length;
+  // Verification check 5: medial and lateral tibial thickness at the base of
+  // the spines should agree within 0.5 mm once the planned tilt is allowed for.
+  const tm=TH.meas.tm, tl=TH.meas.tl;
+  const sym=document.getElementById("theasym");
+  if(sym){
+    if(tm===undefined||tm===null||tl===undefined||tl===null){ sym.innerHTML=""; }
+    else {
+      const seen=r1(tm-tl), planned=c.spine.diff, off=r1(seen-planned);
+      const ok=Math.abs(off)<=0.5;
+      sym.innerHTML='<div class="bone '+(ok?"eq":"uneq")+'">'
+        + esc(ok ? t("th.sym",{v:fmt(seen)}) : t("th.asym",{v:fmt(seen),p:fmt(planned)}))
+        + '</div>';
+    }
+  }
   document.getElementById("theasum").innerHTML =
     bad>0 ? '<div class="warnbox w-bad">'+esc(t("th.bad",{n:bad}))+'</div>'
     : idle>0 ? '' : '<div class="warnbox w-ok">'+esc(t("th.ok"))+'</div>';
