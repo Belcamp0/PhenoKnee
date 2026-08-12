@@ -594,6 +594,7 @@ const LT={
  "c.tibwear":"Blauzdikaulio nudilimas","c.medshort":"med.","c.latshort":"lat.",
  "th.sym":"Medialinis ir lateralinis sutampa ties an\u010Diuk\u0173 pagrindu: skiriasi {v} mm, kaip ir numatyta plane.",
  "th.asym":"Medialinis ir lateralinis ties an\u010Diuk\u0173 pagrindu skiriasi {v} mm; plane numatyta {p} mm. Patikrinkite kreiptuv\u0105 prie\u0161 bandinius.",
+ "ax.perp":"statmuo",
  "ax.fem":"\u0160launikaulio mech. a\u0161is","ax.tib":"Blauzdikaulio mech. a\u0161is",
  "rk.none":"\u0160iam keliui korekcijos nereikia \u2013 jis jau yra ribose. Serijoje, kuria remiantis sukurtas protokolas, toki\u0173 buvo apie {p}%.",
  "rk.corr":"Atlikta korekcija: {tb}\u00b0 blauzdikaulio, {f}\u00b0 \u0161launikaulio. Skelbti \u0161io protokolo vidurkiai \u2013 {mt}\u00b0 ir {mf}\u00b0.",
@@ -727,6 +728,7 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "ax.perp":"perpendicular",
  "rk.none":"This knee needs no adjustment — it already sits inside the boundaries. About {p}% of knees in the series that defined the protocol were the same.",
  "rk.corr":"Correction applied: {tb}° tibial, {f}° femoral. The published means for this protocol are {mt}° and {mf}°.",
  "rk.ma":"Mechanical alignment would need about {tb}° tibial and {f}° femoral on an average knee.",
@@ -1082,7 +1084,11 @@ function drawFig(c){
      the two cut planes still come out parallel — which is what happens once
      the components seat, and a check that the plan is self-consistent. */
   const resH = (c.hka===null) ? S.hka : c.hka;
-  const tfF=tfm(mid,fY,-flip*resH,SC,flip), tfT=tfm(mid,tY,0,SC,flip);
+  /* The femoral rotation must not carry the side flip. The transform already
+     mirrors x, so applying flip here mirrored it twice and left the femur
+     leaning laterally on a left knee. The parallel-cut derivation gives
+     thF = plannedLDFA - plannedMPTA = -resH, independent of side. */
+  const tfF=tfm(mid,fY,-resH,SC,flip), tfT=tfm(mid,tY,0,SC,flip);
   const fT=90-S.ldfa, tT=90-S.mpta;
   const ysF=function(x){return TAN(fT)*x;}, ysT=function(x){return TAN(tT)*x;};
 
@@ -1186,6 +1192,32 @@ function drawFig(c){
   g+=dotAt(tfT,[0,0]);
   g+=axisTag(tfF,[0,-30],t("ax.fem"),flip);
   g+=axisTag(tfT,[0,34],t("ax.tib"),flip);
+
+  /* The angle the two mechanical axes open at the knee is the limb alignment,
+     so it is drawn as an arc there rather than only stated in a chip. */
+  if(c.hka!==null && Math.abs(resH)>0.15){
+    // Arc from the tibial axis extended through the knee to the femoral axis,
+    // so it spans the limb alignment angle itself rather than the reflex angle.
+    const k=tfT([0,0]), R=32;
+    const unit=function(tf){
+      const a=tf([0,0]), b=tf([0,-1]);
+      const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
+      return [dx/L, dy/L];
+    };
+    const uT=unit(tfT), uF=unit(tfF);
+    const p1=[k[0]+R*uT[0], k[1]+R*uT[1]];
+    const p2=[k[0]+R*uF[0], k[1]+R*uF[1]];
+    const cross=uT[0]*uF[1]-uT[1]*uF[0];
+    g+='<path d="M'+p1[0].toFixed(1)+','+p1[1].toFixed(1)+' A'+R+','+R+' 0 0 '
+      +(cross>0?1:0)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1)
+      +'" fill="none" stroke="#2E6B59" stroke-width="1.4" stroke-opacity="0.7"/>';
+    const lx=k[0]+flip*44, ly=k[1]-24;
+    g+='<rect x="'+(flip>0?lx-5:lx-49).toFixed(1)+'" y="'+(ly-9).toFixed(1)
+      +'" width="54" height="17" rx="4" fill="#F1EFE8" fill-opacity="0.92"/>';
+    g+='<text x="'+lx.toFixed(1)+'" y="'+(ly+3.5).toFixed(1)+'" text-anchor="'
+      +(flip>0?"start":"end")+'" font-size="11.5" font-weight="600" fill="#2E6B59"'
+      +' font-family="ui-monospace,monospace">'+esc(sgn(resH)+"\u00b0")+'</text>';
+  }
 
   g+='<text x="'+(W/2)+'" y="'+(336)+'" text-anchor="middle" font-size="11" fill="#8A867A" font-family="sans-serif">'
     +esc(c.hka===null ? t("fg.native") : t("fg.after",{v:sgn(resH)}))+'</text>';
@@ -1457,6 +1489,22 @@ function drawFigAP(c){
   g+=tag(tfT,[33,cutY(28)+4],fmt(shown(depth)),A2("start"));
 
   if(S.implantEnabled && S.implant) g+=implantSagittal(tfF,tfT,c,dy,px,k,cutY,tibPts,profile,box);
+
+  /* The tibial mechanical axis, with the perpendicular the slope is measured
+     from. Without it the slope figure had nothing on screen to be an angle to. */
+  g+=seg(tfT,[0,-4],[0,86],"#F1EFE8",3.4);
+  g+=seg(tfT,[0,-4],[0,86],"#2E6B59",1.4,"6 4");
+  g+=dotAt(tfT,[0,0]);
+  {
+    const ref=tibPts[0];
+    const y0=ref[1]+depth;
+    g+=seg(tfT,[-26,y0],[27,y0],"#8A867A",1,"3 3");   // perpendicular to the axis
+    const q=tfT([AFLIP>0?30:-30,y0]);
+    g+='<text x="'+q[0].toFixed(1)+'" y="'+(q[1]-5).toFixed(1)
+      +'" text-anchor="'+(AFLIP>0?"start":"end")+'" font-size="10" fill="#8A867A"'
+      +' font-family="sans-serif">'+esc(t("ax.perp"))+'</text>';
+  }
+  g+=axisTag(tfT,[0,44],t("ax.tib"),AFLIP);
 
   // slope readout
   g+='<text x="14" y="'+Math.min(334,tY+150)+'" font-size="12" fill="#5F5E5A" font-family="sans-serif">'
