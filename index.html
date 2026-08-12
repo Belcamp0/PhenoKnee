@@ -22,6 +22,11 @@ body{margin:0;background:var(--mist);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .app{max-width:520px;margin:0 auto;background:var(--surface);min-height:100vh}
+/* Title bar and tab row stay put while the page scrolls. They are wrapped so
+   they stick as one block; the strategy strip then sticks directly beneath,
+   using a height measured at runtime because the bar grows with the safe-area
+   inset and the tab row can wrap in Lithuanian. */
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface)}
 .bar{background:var(--teal);color:var(--drape);
   padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
   display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -52,7 +57,7 @@ section h2:first-child{margin-top:0}
   border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
 .strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px}
-#strats{position:sticky;top:0;z-index:4;background:var(--surface);
+#strats{position:sticky;top:var(--topH,0px);z-index:4;background:var(--surface);
   padding-top:10px;margin-top:-10px;box-shadow:0 6px 8px -8px rgba(0,0,0,.25)}
 nav::after{content:"";position:sticky;right:0;flex:0 0 18px;
   background:linear-gradient(90deg,rgba(255,255,255,0),var(--surface));pointer-events:none}
@@ -218,6 +223,30 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .fold[open]>summary::after{content:"\2212"}
 .fold[open]>summary{border-bottom:.5px solid var(--border)}
 .foldbody{padding:14px 16px 4px}
+/* Guide-angle callout. This is the figure a surgeon reads off at the table,
+   so it is sized to be legible across an operating room rather than scanned
+   like the surrounding notes. */
+.gcall{border-radius:12px;padding:13px 15px 11px;margin:4px 0 18px;border:1px solid;
+  border-left-width:4px}
+.gcall.ok{background:var(--within-bg);border-color:#8FBF56}
+.gcall.warn{background:var(--edge-bg);border-color:#E9B460}
+.gcall.na{background:var(--mist);border-color:var(--border)}
+.glab{margin:0;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.75}
+.gcall.ok .glab{color:var(--within-tx)} .gcall.warn .glab{color:var(--edge-tx)}
+.gval{margin:2px 0 0;display:flex;align-items:baseline;gap:2px;line-height:1}
+.gval .num{font-size:34px;font-weight:600;font-family:var(--mono);letter-spacing:-0.8px}
+.gval .deg{font-size:21px;font-weight:500;font-family:var(--mono);opacity:.55;margin:0 3px}
+.gval .dir{font-size:13px;font-weight:500;margin-left:7px;opacity:.8}
+.gcall.ok .gval{color:var(--within-tx)} .gcall.warn .gval{color:var(--edge-tx)}
+.gsub{margin:3px 0 0;font-size:12.5px;opacity:.85}
+.gcall.ok .gsub{color:var(--within-tx)} .gcall.warn .gsub{color:var(--edge-tx)}
+.gbush{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:9px}
+.bchip{font-size:12px;font-weight:600;font-family:var(--mono);padding:4px 10px;
+  border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--ink)}
+.bchip.hit{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.bnote{font-size:12px;opacity:.8}
+.gcall.ok .bnote{color:var(--within-tx)} .gcall.warn .bnote{color:var(--edge-tx)}
+.gna{margin:0;font-size:12.5px;line-height:1.5;color:var(--bone)}
 .bone{border-radius:10px;padding:11px 13px;margin:10px 0;font-size:12.5px;line-height:1.55}
 .bone.eq{background:var(--within-bg);color:var(--within-tx)}
 .bone.uneq{background:var(--edge-bg);color:var(--edge-tx)}
@@ -273,6 +302,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
 <body>
 <div class="app">
 
+<div class="topbar">
 <div class="bar">
   <div class="brand">
     <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
@@ -301,6 +331,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <button role="tab" data-tab="pat" aria-selected="false" data-i="nav.pat">Patient</button>
   <button role="tab" data-tab="log" aria-selected="false" data-i="nav.log">Log</button>
 </nav>
+</div>
 
 <section id="s-case" class="on">
   <div class="about">
@@ -338,6 +369,12 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
       <input id="i-hka" type="number" step="0.1" value="-7.0" inputmode="decimal"></div>
     <input id="r-hka" class="range" type="range" min="-20" max="20" step="0.1" value="-7.0" aria-label="HKA">
     <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-ama"><span data-i="c.ama">Femoral anatomic–mechanical angle</span><span class="hint" data-i="c.amaH">Between the shaft and the mechanical axis; sets the guide</span></label>
+      <input id="i-ama" type="number" step="0.1" value="6.0" inputmode="decimal"></div>
+    <input id="r-ama" class="range" type="range" min="3" max="9" step="0.1" value="6.0" aria-label="AMA">
+    <div class="ticks"><span>3</span><span data-i="c.amaLo">small</span><span>6</span><span data-i="c.amaHi">large</span><span>9</span></div>
   </div>
   <div class="sldr">
     <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
@@ -440,6 +477,8 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <span id="lg-blade"><i class="sw" style="background:#0F6E56"></i><span data-i="lg.blade">Blade slot</span></span>
     <span><i class="sw" style="background:#888780"></i><span data-i="lg.mech">Mechanical axis</span></span>
   </div>
+  <div id="guiderow"></div>
+
   <h2 data-i="p.tbl">Resection depths</h2>
   <table><thead><tr>
     <th data-i="p.cut">Cut</th><th data-i="p.med">Medial</th><th data-i="p.lat">Lateral</th><th data-i="p.diff">Diff</th>
@@ -567,6 +606,8 @@ const EVO={ sizes:[1,2,3,4,5,6,7,8],
     // 0.050 inch saw blade, the thickness the Evolution resection slots are
   // designed for. Kept exact rather than rounded, because it is subtracted
   // from every resection and the rounding compounds.
+  // Valgus bushings supplied with the instrument set.
+  bushings:[3,5,7],
   distal:9, blade:1.27, baseplate:3, insertThk:10 };
 /* Span between medial and lateral condylar reference points. Sets how many
    millimetres of differential resection one degree of correction costs.
@@ -620,6 +661,19 @@ const LT={
  "th.asym":"Medialinis ir lateralinis ties an\u010Diuk\u0173 pagrindu skiriasi {v} mm; plane numatyta {p} mm. Patikrinkite kreiptuv\u0105 prie\u0161 bandinius.",
  "ax.perp":"statmuo",
  "ax.fem":"\u0160launikaulio mech. a\u0161is","ax.tib":"Blauzdikaulio mech. a\u0161is",
+ "gd.labCal":"Distalin\u0117 \u0161launikaulio rezekcija, medialin\u0117 / lateralin\u0117",
+ "gd.mmML":"mm nuo krumpli\u0173",
+ "gd.calSub":"Nustatoma kaliperiu nuo krumpli\u0173, o ne valgus kampu.",
+ "gd.calNote":"Kreiptuvas atremiamas \u012F nenudilus\u012F krumpl\u012F ir kompensuoja kremzl\u0117s nudilim\u0105, tod\u0117l \u012Fvor\u0117s kampo nustatyti nereikia.",
+ "gd.lab":"Distalinis \u0161launikaulio kreiptuvas","gd.valgus":"valgus",
+ "gd.rod":"nuo intramedulinio strypo","gd.exact":"atitinka plan\u0105",
+ "c.ama":"\u0160launikaulio anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas",
+ "c.amaH":"Tarp diafiz\u0117s ir mechanin\u0117s a\u0161ies; pagal j\u012F nustatomas kreiptuvas",
+ "c.amaLo":"ma\u017Eas","c.amaHi":"didelis",
+ "gd.head":"Distalinis \u0161launikaulio kreiptuvas: {v}\u00b0 valgus nuo intramedulinio strypo.",
+ "gd.bush":"artimiausia \u012Fvor\u0117 {b}\u00b0","gd.off":"lieka {v}\u00b0 nuokrypio",
+ "gd.ama":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0",
+ "gd.na":"\u0160ioje strategijoje distalinis \u0161launikaulio pj\u016Bvis nustatomas pagal tarpus, tod\u0117l kreiptuvo kampo i\u0161vesti negalima.",
  "nav.elig":"Tinkamumas",
  "el.case":"\u0160is atvejis","el.crit":"Pagal kiekvieno protokolo skelbtus kriterijus",
  "el.met":"Kriterijai tenkinami","el.adj":"Reikia korekcijos","el.always":"Rib\u0173 n\u0117ra",
@@ -772,6 +826,18 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "gd.labCal":"Distal femoral resection, medial / lateral",
+ "gd.mmML":"mm off the condyles",
+ "gd.calSub":"Set by caliper off the condyles, not by a valgus angle.",
+ "gd.calNote":"The guide references the unworn condyle and compensates for cartilage wear, so there is no bushing angle to dial.",
+ "gd.lab":"Distal femoral guide","gd.valgus":"valgus",
+ "gd.rod":"off the intramedullary rod","gd.exact":"matches the plan",
+ "c.ama":"Femoral anatomic–mechanical angle","c.amaH":"Between the shaft and the mechanical axis; sets the guide",
+ "c.amaLo":"small","c.amaHi":"large",
+ "gd.head":"Distal femoral guide: {v}° valgus off the intramedullary rod.",
+ "gd.bush":"nearest bushing {b}°","gd.off":"leaves {v}° of residual tilt",
+ "gd.ama":"anatomic–mechanical angle {v}°",
+ "gd.na":"The distal femoral cut is set from the gaps in this strategy, so there is no guide angle to derive.",
  "el.case":"This case","el.crit":"Against each protocol's published criteria",
  "el.met":"Criteria met","el.adj":"Adjustment needed","el.always":"No boundary",
  "el.nocorr":"no adjustment required","el.gapset":"femur set intra-operatively from the gaps",
@@ -918,7 +984,7 @@ const r1=v=>Math.round(v*10)/10, clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const TAN=d=>Math.tan(d*Math.PI/180);
 
-const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,
+const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,ama:6,
   // Implant overlay is held back until the component outlines are checked
   // against the technique guide. Flip this to true to bring it back.
   implant:false, implantEnabled:false,
@@ -930,7 +996,7 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,
 const V=id=>document.getElementById(id).value;
 const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
 function read(){
-  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));
+  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));S.ama=num(V("i-ama"));
 }
 
 /* Bring the limb inside a boundary by moving components toward neutral.
@@ -1870,6 +1936,71 @@ function renderEligibility(){
       +esc(t("el.pheno",{n:CPAK_ROMAN[cp.type],k:CPAK_BAL[cp.type][0],m:CPAK_BAL[cp.type][1]}))+'</div>';
   } else ph.innerHTML="";
 }
+/* The intramedullary rod follows the femoral anatomic axis, while the planned
+   cut is defined against the mechanical axis. The bushing bridges the two:
+
+     guide valgus = AMA + (90 - planned LDFA)
+
+   A perpendicular cut on a 6 degree AMA therefore needs 6 degrees of valgus,
+   which is the familiar 5 to 7 degree setting. More bushing valgus lowers the
+   resulting LDFA, so the sign runs the way a surgeon expects. */
+function guideValgus(plannedLDFA){
+  if(plannedLDFA===null || !Number.isFinite(S.ama)) return null;
+  return r1(S.ama + (90 - plannedLDFA));
+}
+function nearestBushing(v){
+  return EVO.bushings.reduce(function(a,b){
+    return Math.abs(b-v)<Math.abs(a-v)?b:a; });
+}
+/* How the distal femoral cut is actually set differs by strategy, so the
+   callout has to differ too.
+     rod      mechanical and adjusted mechanical drive the cut from an
+              intramedullary rod, so a valgus bushing angle is the number
+     caliper  kinematic and restricted kinematic reference the guide off the
+              condyles themselves and compensate for cartilage wear. There is
+              no valgus angle to dial: quoting one implies an instrument the
+              technique does not use, and the figure would not correspond to
+              anything the surgeon sets
+     gaps     inverse kinematic sets the distal cut from the gaps */
+const GUIDE_MODE={ ma:"rod", ama:"rod", ka:"caliper", rka:"caliper", ika:"gaps" };
+
+function renderGuide(c){
+  const el=document.getElementById("guiderow"); if(!el) return;
+  const mode=GUIDE_MODE[S.strat]||"gaps";
+
+  if(mode==="gaps" || c.p.ldfa===null){
+    el.innerHTML='<div class="gcall na"><p class="gna">'+esc(t("gd.na"))+'</p></div>';
+    return;
+  }
+
+  if(mode==="caliper"){
+    const med=S.blade?r1(c.distal.med-EVO.blade):c.distal.med;
+    const lat=S.blade?r1(c.distal.lat-EVO.blade):c.distal.lat;
+    el.innerHTML='<div class="gcall ok">'
+      + '<p class="glab">'+esc(t("gd.labCal"))+'</p>'
+      + '<p class="gval"><span class="num">'+esc(fmt(med))+'</span>'
+      + '<span class="deg">/</span><span class="num">'+esc(fmt(lat))+'</span>'
+      + '<span class="dir">'+esc(t("gd.mmML"))+'</span></p>'
+      + '<p class="gsub">'+esc(t("gd.calSub"))+'</p>'
+      + '<div class="gbush"><span class="bnote">'+esc(t("gd.calNote"))+'</span></div>'
+      + '</div>';
+    return;
+  }
+
+  const g=guideValgus(c.p.ldfa);
+  const b=nearestBushing(g), off=r1(g-b);
+  const exact=Math.abs(off)<0.26;
+  el.innerHTML='<div class="gcall '+(exact?"ok":"warn")+'">'
+    + '<p class="glab">'+esc(t("gd.lab"))+'</p>'
+    + '<p class="gval"><span class="num">'+esc(fmt(g))+'</span><span class="deg">\u00b0</span>'
+    + '<span class="dir">'+esc(t("gd.valgus"))+'</span></p>'
+    + '<p class="gsub">'+esc(t("gd.rod"))+'</p>'
+    + '<div class="gbush"><span class="bchip'+(exact?" hit":"")+'">'
+    + esc(t("gd.bush",{b:fmt(b,0)}))+'</span>'
+    + '<span class="bnote">'+esc(exact?t("gd.exact"):t("gd.off",{v:sgn(off)}))+'</span>'
+    + '<span class="bnote">'+esc(t("gd.ama",{v:fmt(S.ama)}))+'</span></div>'
+    + '</div>';
+}
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
   el.innerHTML=[
@@ -1914,7 +2045,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
@@ -2176,6 +2307,7 @@ document.getElementById("btn-apply").addEventListener("click",function(){
   paintTrack(z);
   document.getElementById("zoomval").textContent=fmt(S.zoom)+"\u00D7";
 })();
+linkSlider("i-ama","r-ama");
 linkSlider("i-hka","r-hka");
 linkSlider("i-slope","r-slope");
 
@@ -2756,6 +2888,23 @@ document.querySelectorAll(".lang button").forEach(function(b){
     document.querySelectorAll(".lang button").forEach(function(x){
       x.setAttribute("aria-pressed",String(x.dataset.lang===LANG));});
     render(); if(M.img) renderMeas();});});
+
+/* The sticky strategy strip has to clear the sticky header, whose height is
+   not known ahead of time. Measure it and expose it as a custom property. */
+(function(){
+  const bar=document.querySelector(".topbar");
+  function sync(){
+    if(!bar) return;
+    document.documentElement.style.setProperty("--topH", bar.offsetHeight+"px");
+  }
+  sync();
+  window.addEventListener("resize", sync);
+  window.addEventListener("orientationchange", sync);
+  document.querySelectorAll(".lang button").forEach(function(b){
+    b.addEventListener("click", function(){ setTimeout(sync, 0); });
+  });
+  if(window.ResizeObserver && bar) new ResizeObserver(sync).observe(bar);
+})();
 
 render();
 </script>
