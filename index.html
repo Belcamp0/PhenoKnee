@@ -158,6 +158,16 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .v-yes{background:var(--within-bg);color:var(--within-tx)}
 .v-partial{background:var(--edge-bg);color:var(--edge-tx)}
 .v-no{background:var(--mist);color:var(--bone)}
+.elg{border:.5px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px}
+.elg .top{display:flex;align-items:baseline;gap:9px;margin-bottom:3px}
+.elg .ab{font-size:19px;font-weight:600;color:var(--teal);line-height:1}
+.elg .nm{font-size:13px;color:var(--ink)}
+.elg .st{margin-left:auto;font-size:11px;padding:3px 9px;border-radius:20px}
+.elg .st.met{background:var(--within-bg);color:var(--within-tx)}
+.elg .st.adj{background:var(--edge-bg);color:var(--edge-tx)}
+.elg .st.na{background:var(--mist);color:var(--bone)}
+.elg .cr{font-size:12.5px;color:var(--bone);line-height:1.5;margin:4px 0 0}
+.elg .ev{font-size:12.5px;line-height:1.5;margin:7px 0 0;color:var(--ink)}
 .thc{border:.5px solid var(--border);border-radius:12px;padding:12px 14px 4px;margin-bottom:10px}
 .thh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
 .tht{font-size:12px;color:var(--bone)}
@@ -286,6 +296,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
 <nav role="tablist">
   <button role="tab" data-tab="case" aria-selected="true" data-i="nav.case">Case</button>
   <button role="tab" data-tab="plan" aria-selected="false" data-i="nav.plan">Cuts</button>
+  <button role="tab" data-tab="elig" aria-selected="false" data-i="nav.elig">Eligibility</button>
   <button role="tab" data-tab="thea" aria-selected="false" data-i="nav.thea">Theatre</button>
   <button role="tab" data-tab="pat" aria-selected="false" data-i="nav.pat">Patient</button>
   <button role="tab" data-tab="log" aria-selected="false" data-i="nav.log">Log</button>
@@ -446,6 +457,19 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <div class="dis" data-i="d.def">Geometric simulation based on values you entered. Not a medical device. Not for clinical decision-making.</div>
 </section>
 
+<section id="s-elig">
+  <h2 data-i="el.case">This case</h2>
+  <div class="chips" id="el-chips"></div>
+
+  <h2 data-i="el.crit">Against each protocol's published criteria</h2>
+  <div id="el-list"></div>
+
+  <div class="warnbox w-info" data-i="el.guide">The AAOS clinical practice guideline carries a strong recommendation that there is no difference in composite or functional outcomes, or in complications, between kinematic and mechanical alignment principles. No professional body recommends one strategy over another, so this page reports whether the criteria are met and what the evidence says — it does not rank the options or choose for you.</div>
+
+  <div id="el-pheno"></div>
+  <div class="dis" data-i="el.dis">Arithmetic comparison against published criteria, plus a summary of published findings. Not a recommendation and not a substitute for clinical judgement.</div>
+</section>
+
 <!-- ================= THEATRE ================= -->
 <section id="s-thea">
   <p class="lede" data-i="th.lede">Targets come from the plan you built. Measure each resection with a caliper and enter what you actually removed. The bone slab is thinner than the guide depth by the thickness of the saw blade.</p>
@@ -596,9 +620,29 @@ const LT={
  "th.asym":"Medialinis ir lateralinis ties an\u010Diuk\u0173 pagrindu skiriasi {v} mm; plane numatyta {p} mm. Patikrinkite kreiptuv\u0105 prie\u0161 bandinius.",
  "ax.perp":"statmuo",
  "ax.fem":"\u0160launikaulio mech. a\u0161is","ax.tib":"Blauzdikaulio mech. a\u0161is",
- "rk.none":"\u0160iam keliui korekcijos nereikia \u2013 jis jau yra ribose. Serijoje, kuria remiantis sukurtas protokolas, toki\u0173 buvo apie {p}%.",
- "rk.corr":"Atlikta korekcija: {tb}\u00b0 blauzdikaulio, {f}\u00b0 \u0161launikaulio. Skelbti \u0161io protokolo vidurkiai \u2013 {mt}\u00b0 ir {mf}\u00b0.",
- "rk.ma":"Mechanin\u0117s a\u0161ies atstatymui vidutiniam keliui prireikt\u0173 apie {tb}\u00b0 blauzdikaulio ir {f}\u00b0 \u0161launikaulio.",
+ "nav.elig":"Tinkamumas",
+ "el.case":"\u0160is atvejis","el.crit":"Pagal kiekvieno protokolo skelbtus kriterijus",
+ "el.met":"Kriterijai tenkinami","el.adj":"Reikia korekcijos","el.always":"Rib\u0173 n\u0117ra",
+ "el.nocorr":"korekcijos nereikia","el.gapset":"\u0161launikaulis nustatomas operacijos metu pagal tarpus",
+ "el.corr":"reik\u0117t\u0173 {f}\u00b0 \u0161launikaulio ir {tb}\u00b0 blauzdikaulio korekcijos",
+ "el.c.ma":"Abu komponentai statmeni savo mechaninei a\u0161iai",
+ "el.c.ama":"Abu komponentai 3\u00b0 ribose nuo statmens, gal\u016Bn\u0117 3\u00b0 ribose nuo neutralios",
+ "el.c.rka":"Kiekviena s\u0105nario linija 5\u00b0 ribose nuo savo mechanin\u0117s a\u0161ies, aritmetinis HKA 3\u00b0 ribose nuo neutralios",
+ "el.c.ka":"Atkuriamos nat\u016Bralios s\u0105nario linijos, ribos netaikomos",
+ "el.c.ika":"Blauzdikaulis atkuriamas nuo 6\u00b0 varus iki 2\u00b0 valgus, \u0161launikaulis derinamas pagal tarpus",
+ "el.e.ma":"Ilgiausia patirtis ir palyginimo b\u016Bdas beveik visuose tyrimuose. Daugumai varus keli\u0173 balansui reikia mink\u0161t\u0173j\u0173 audini\u0173 atpalaidavimo.",
+ "el.e.ama":"Ma\u017Eiausiai tirtas i\u0161 vainikin\u0117s plok\u0161tumos b\u016Bd\u0173; atskirai jo netyr\u0117 n\u0117 vienas tyrimas.",
+ "el.e.rka":"KT serijoje, kuria remiantis jis sukurtas, 51% keli\u0173 atitiko kriterijus be pakeitim\u0173, o vidutin\u0117s korekcijos buvo 0,5\u00b0 blauzdikaulio ir 0,3\u00b0 \u0161launikaulio, palyginti su 3,3\u00b0 ir 3,2\u00b0 mechaninei a\u0161iai.",
+ "el.e.ka":"Atkuria prie\u0161artrozines s\u0105nario linijas ir paprastai subalansuojama be atpalaidavimo. Tyrimai po 10 ir 13 met\u0173 nerodo pranašumo prie\u0161 mechanin\u0119 a\u0161\u012F.",
+ "el.e.ika":"Ma\u017Eiausiai tyrim\u0173 i\u0161 vis\u0173 \u010Dia pateikt\u0173 b\u016Bd\u0173. Galutin\u0117s \u0161launikaulio pad\u0117ties negalima numatyti prie\u0161 operacij\u0105.",
+ "el.pheno":"Konkre\u010Diai CPAK {n} tipui klasifikacij\u0105 pristat\u0119s straipsnis nurod\u0117, kad optimal\u0173 balans\u0105 pasiek\u0117 {k}% kinemati\u0161kai atstatyt\u0173 keli\u0173, palyginti su {m}% mechani\u0161kai atstatyt\u0173.",
+ "el.guide":"AAOS klinikin\u0117s praktikos gair\u0117s pateikia stipri\u0105 rekomendacij\u0105, kad tarp kinematin\u0117s ir mechanin\u0117s a\u0161ies princip\u0173 n\u0117ra skirtumo nei bendruose ar funkciniuose rezultatuose, nei komplikacijose. N\u0117 viena profesin\u0117 organizacija nerekomenduoja vienos strategijos, tod\u0117l \u0161is puslapis nurodo, ar kriterijai tenkinami ir k\u0105 rodo \u012Frodymai \u2013 jis nereitinguoja ir nesirenka u\u017E jus.",
+ "el.dis":"Aritmetinis palyginimas su skelbtais kriterijais ir publikuot\u0173 duomen\u0173 santrauka. Ne rekomendacija ir ne gydytojo sprendimo pakaitalas.",
+ "co.native":"Korekcijos n\u0117ra \u2013 nat\u016Bralios s\u0105nario linijos atkuriamos tokios, kokios i\u0161matuotos.",
+ "co.none":"\u0160iam keliui korekcijos nereikia; jis jau yra ribose. Serijoje, kuria remiantis sukurtas protokolas, toki\u0173 buvo apie {p}%.",
+ "co.head":"Atlikta korekcija: {f}\u00b0 \u0161launikaulio, {tb}\u00b0 blauzdikaulio \u2013 {mm} mm kaulo perskirstyta tarp skyri\u0173.",
+ "co.detail":"\u0161launikaulis {ff}\u00b0 ({fm} mm) \u00b7 blauzdikaulis {tf}\u00b0 ({tm} mm)",
+ "co.ref":"skelbtas \u0161io protokolo vidurkis {f}\u00b0 / {tb}\u00b0",
  "fg.after":"Galūnė pavaizduota tokia, kokią palieka pjūviai \u2013 {v}\u00b0",
  "fg.native":"Galūnė pavaizduota kaip išmatuota; šioje strategijoje šlaunikaulis nustatomas pagal tarpus",
  "bn.eq":"Pa\u0161alinamo kaulo kiekis vienodas abiejose kiekvieno pj\u016Bvio pus\u0117se \u2013 pavir\u0161ius atkuriamas, o ne perorientuojamas.",
@@ -728,10 +772,27 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "el.case":"This case","el.crit":"Against each protocol's published criteria",
+ "el.met":"Criteria met","el.adj":"Adjustment needed","el.always":"No boundary",
+ "el.nocorr":"no adjustment required","el.gapset":"femur set intra-operatively from the gaps",
+ "el.corr":"would need {f}° femoral and {tb}° tibial correction",
+ "el.c.ma":"Both components perpendicular to their mechanical axis",
+ "el.c.ama":"Both components within 3° of perpendicular, limb within 3° of neutral",
+ "el.c.rka":"Each joint line within 5° of its own mechanical axis, arithmetic HKA within 3° of neutral",
+ "el.c.ka":"Native joint lines reproduced, no boundary applied",
+ "el.c.ika":"Tibia restored within 6° varus to 2° valgus, femur balanced to the gaps",
+ "el.e.ma":"The longest track record and the comparator in almost every trial. Most varus knees need a soft-tissue release to balance.",
+ "el.e.ama":"The least studied of the coronal approaches; no trial has examined it on its own.",
+ "el.e.rka":"In the CT series that defined it, 51% of knees met the criteria untouched, with mean corrections of 0.5° tibial and 0.3° femoral against 3.3° and 3.2° for mechanical alignment.",
+ "el.e.ka":"Restores the pre-arthritic joint lines and usually balances without release. Trials at 10 and 13 years show no advantage over mechanical alignment in survivorship.",
+ "el.e.ika":"Fewest trials of any approach here. The final femoral position cannot be predicted before surgery.",
+ "el.pheno":"For CPAK {n} specifically, the paper that introduced the classification reported {k}% of kinematically aligned knees achieving optimal balance against {m}% of mechanically aligned ones.",
+ "co.native":"No correction — the native joint lines are reproduced as measured.",
+ "co.none":"This knee needs no adjustment; it already sits inside the boundaries. About {p}% of knees in the series that defined the protocol were the same.",
+ "co.head":"Correction applied: {f}° femoral, {tb}° tibial — {mm} mm of bone redistributed between the compartments.",
+ "co.detail":"femur {ff}° ({fm} mm) · tibia {tf}° ({tm} mm)",
+ "co.ref":"published mean for this protocol {f}° / {tb}°",
  "ax.perp":"perpendicular",
- "rk.none":"This knee needs no adjustment — it already sits inside the boundaries. About {p}% of knees in the series that defined the protocol were the same.",
- "rk.corr":"Correction applied: {tb}° tibial, {f}° femoral. The published means for this protocol are {mt}° and {mf}°.",
- "rk.ma":"Mechanical alignment would need about {tb}° tibial and {f}° femoral on an average knee.",
  "ax.fem":"Femoral mech. axis","ax.tib":"Tibial mech. axis",
  "fg.after":"Limb shown as the cuts leave it — {v}\u00b0",
  "fg.native":"Limb shown as measured; this strategy sets the femur from the gaps",
@@ -1735,16 +1796,79 @@ function renderBone(c){
    MPTA and 0.3 deg LDFA — against 3.3 deg and 3.2 deg for mechanical alignment.
    Showing this knee's corrections beside those means tells the surgeon whether
    the case in front of them is ordinary or unusual for the protocol. */
-const RKA_REF={noAdjust:51, mptaMean:0.5, ldfaMean:0.3, mptaMA:3.3, ldfaMA:3.2};
-function renderRkaNote(c){
+/* Published mean corrections from the CT series that defined these protocols:
+   4884 knees, 51% of which needed no adjustment under restricted kinematic
+   alignment. Mean corrections were 0.5 deg MPTA and 0.3 deg LDFA for rKA
+   against 3.3 deg and 3.2 deg for mechanical alignment. Showing this knee's
+   figures beside those means says whether the case is ordinary or unusual. */
+const CORR_REF={ rka:{f:0.3,tb:0.5,noAdjust:51}, ma:{f:3.2,tb:3.3} };
+function renderCorrection(c){
   const el=document.getElementById("rkanote"); if(!el) return;
-  if(S.strat!=="rka" || c.p.ldfa===null){ el.innerHTML=""; return; }
+  if(c.p.ldfa===null){ el.innerHTML=""; return; }   // femur set by gap balancing
   const dF=Math.abs(r1(c.p.ldfa-S.ldfa)), dT=Math.abs(r1(c.p.mpta-S.mpta));
+  const mF=r1(Math.abs(FEMUR_SPAN*TAN(dF))), mT=r1(Math.abs(TIBIA_SPAN*TAN(dT)));
   const none=(dF<0.05&&dT<0.05);
-  el.innerHTML='<div class="bone '+(none?"eq":"uneq")+'">'
-    + esc(none ? t("rk.none",{p:RKA_REF.noAdjust})
-               : t("rk.corr",{f:fmt(dF),tb:fmt(dT),mf:fmt(RKA_REF.ldfaMean),mt:fmt(RKA_REF.mptaMean)}))
-    + '<span class="vals">'+esc(t("rk.ma",{f:fmt(RKA_REF.ldfaMA),tb:fmt(RKA_REF.mptaMA)}))+'</span></div>';
+  const ref=CORR_REF[S.strat];
+  let head;
+  if(none) head = S.strat==="rka" ? t("co.none",{p:ref.noAdjust}) : t("co.native");
+  else     head = t("co.head",{f:fmt(dF),tb:fmt(dT),mm:fmt(r1(mF+mT))});
+  let sub = t("co.detail",{ff:fmt(dF),fm:fmt(mF),tf:fmt(dT),tm:fmt(mT)});
+  if(ref && ref.f!==undefined) sub += "  \u00b7  " + t("co.ref",{f:fmt(ref.f),tb:fmt(ref.tb)});
+  el.innerHTML='<div class="bone '+(none?"eq":"uneq")+'">'+esc(head)
+    +'<span class="vals">'+esc(sub)+'</span></div>';
+}
+/* Eligibility is a factual test: does this knee meet each protocol's published
+   criteria without adjustment, and if not by how much. It deliberately stops
+   short of ranking the options. The AAOS guideline carries a strong
+   recommendation of no difference between kinematic and mechanical principles,
+   so there is no guideline basis on which to recommend one, and choosing a
+   strategy for a particular patient is a clinical judgement rather than an
+   arithmetic result. */
+function renderEligibility(){
+  const list=document.getElementById("el-list"); if(!list) return;
+  const L=S.ldfa, M=S.mpta, a=r1(M-L), j=r1(M+L), intra=r1(S.hka-a);
+  const cp=cpakOf(a,j);
+
+  document.getElementById("el-chips").innerHTML=
+    '<span class="chip">LDFA <b>'+fmt(L)+'</b></span>'
+   +'<span class="chip">MPTA <b>'+fmt(M)+'</b></span>'
+   +'<span class="chip">aHKA <b>'+sgn(a)+'\u00b0</b></span>'
+   +'<span class="chip">JLO <b>'+fmt(j)+'\u00b0</b></span>'
+   +'<span class="chip">CPAK <b>'+CPAK_ROMAN[cp.type]+'</b> '+esc(cpakName(cp))+'</span>'
+   +'<span class="chip">'+esc(t("cp.intra",{v:fmt(Math.abs(intra))}))+'</span>';
+
+  const rows=[
+    {id:"ma",  met:true, crit:"el.c.ma",  ev:"el.e.ma"},
+    {id:"ama", met:(Math.abs(L-90)<=3 && Math.abs(M-90)<=3), crit:"el.c.ama", ev:"el.e.ama"},
+    {id:"rka", met:(Math.abs(L-90)<=5 && Math.abs(M-90)<=5 && Math.abs(a)<=3), crit:"el.c.rka", ev:"el.e.rka"},
+    {id:"ka",  met:true, crit:"el.c.ka",  ev:"el.e.ka"},
+    {id:"ika", met:(M>=84 && M<=92), crit:"el.c.ika", ev:"el.e.ika", noFemur:true}
+  ];
+  list.innerHTML=rows.map(function(r){
+    const p=planned(r.id);
+    let stCls, stTxt;
+    if(r.id==="ka"||r.id==="ma"){ stCls="na"; stTxt=t("el.always"); }
+    else if(r.met){ stCls="met"; stTxt=t("el.met"); }
+    else { stCls="adj"; stTxt=t("el.adj"); }
+    let corr="";
+    if(p.ldfa!==null){
+      const dF=Math.abs(r1(p.ldfa-L)), dT=Math.abs(r1(p.mpta-M));
+      corr = (dF<0.05&&dT<0.05) ? t("el.nocorr")
+           : t("el.corr",{f:fmt(dF),tb:fmt(dT)});
+    } else corr = t("el.gapset");
+    return '<div class="elg"><div class="top"><span class="ab">'+esc(t("ab."+r.id))+'</span>'
+      +'<span class="nm">'+esc(t("s."+r.id+"F"))+'</span>'
+      +'<span class="st '+stCls+'">'+esc(stTxt)+'</span></div>'
+      +'<p class="cr">'+esc(t(r.crit))+' \u2014 '+esc(corr)+'</p>'
+      +'<p class="ev">'+esc(t(r.ev))+'</p></div>';
+  }).join("");
+
+  /* Phenotype-specific findings, shown only for the types where they exist. */
+  const ph=document.getElementById("el-pheno");
+  if(CPAK_BAL[cp.type]){
+    ph.innerHTML='<div class="warnbox w-ok">'
+      +esc(t("el.pheno",{n:CPAK_ROMAN[cp.type],k:CPAK_BAL[cp.type][0],m:CPAK_BAL[cp.type][1]}))+'</div>';
+  } else ph.innerHTML="";
 }
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
@@ -1790,7 +1914,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCpak(); renderStudies(); renderHow(); renderRkaNote(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
