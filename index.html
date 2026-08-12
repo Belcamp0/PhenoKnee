@@ -434,6 +434,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <th data-i="p.cut">Cut</th><th data-i="p.med">Medial</th><th data-i="p.lat">Lateral</th><th data-i="p.diff">Diff</th>
   </tr></thead><tbody id="cuts"></tbody></table>
   <p class="lede" style="margin-top:8px" data-i="p.note">Upper figure is the guide depth from the articular surface. Smaller figure is the bone slab you will measure with a caliper, once the saw blade thickness is taken off.</p>
+  <div id="rkanote"></div>
   <div id="bonerow"></div>
   <div id="planwarn"></div>
   <details class="fold">
@@ -594,6 +595,9 @@ const LT={
  "th.sym":"Medialinis ir lateralinis sutampa ties an\u010Diuk\u0173 pagrindu: skiriasi {v} mm, kaip ir numatyta plane.",
  "th.asym":"Medialinis ir lateralinis ties an\u010Diuk\u0173 pagrindu skiriasi {v} mm; plane numatyta {p} mm. Patikrinkite kreiptuv\u0105 prie\u0161 bandinius.",
  "ax.fem":"\u0160launikaulio mech. a\u0161is","ax.tib":"Blauzdikaulio mech. a\u0161is",
+ "rk.none":"\u0160iam keliui korekcijos nereikia \u2013 jis jau yra ribose. Serijoje, kuria remiantis sukurtas protokolas, toki\u0173 buvo apie {p}%.",
+ "rk.corr":"Atlikta korekcija: {tb}\u00b0 blauzdikaulio, {f}\u00b0 \u0161launikaulio. Skelbti \u0161io protokolo vidurkiai \u2013 {mt}\u00b0 ir {mf}\u00b0.",
+ "rk.ma":"Mechanin\u0117s a\u0161ies atstatymui vidutiniam keliui prireikt\u0173 apie {tb}\u00b0 blauzdikaulio ir {f}\u00b0 \u0161launikaulio.",
  "fg.after":"Galūnė pavaizduota tokia, kokią palieka pjūviai \u2013 {v}\u00b0",
  "fg.native":"Galūnė pavaizduota kaip išmatuota; šioje strategijoje šlaunikaulis nustatomas pagal tarpus",
  "bn.eq":"Pa\u0161alinamo kaulo kiekis vienodas abiejose kiekvieno pj\u016Bvio pus\u0117se \u2013 pavir\u0161ius atkuriamas, o ne perorientuojamas.",
@@ -723,6 +727,9 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "rk.none":"This knee needs no adjustment — it already sits inside the boundaries. About {p}% of knees in the series that defined the protocol were the same.",
+ "rk.corr":"Correction applied: {tb}° tibial, {f}° femoral. The published means for this protocol are {mt}° and {mf}°.",
+ "rk.ma":"Mechanical alignment would need about {tb}° tibial and {f}° femoral on an average knee.",
  "ax.fem":"Femoral mech. axis","ax.tib":"Tibial mech. axis",
  "fg.after":"Limb shown as the cuts leave it — {v}\u00b0",
  "fg.native":"Limb shown as measured; this strategy sets the femur from the gaps",
@@ -863,15 +870,26 @@ function read(){
   S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));
 }
 
-function converge(f,tb,lim){let g=0;
+/* Bring the limb inside a boundary by moving components toward neutral.
+   mode "femurLast" follows Vendittoli's fourth principle: femoral anatomy is
+   preserved in preference to tibial, so the tibia absorbs the correction as far
+   as neutral and only then is the femur touched. The generic mode moves
+   whichever component sits furthest from neutral, which alters the femur more
+   often than the protocol intends. */
+function converge(f,tb,lim,mode){let g=0;
   while(Math.abs(tb-f)>lim+1e-9&&g++<3000){
-    if(Math.abs(tb-90)>=Math.abs(f-90))tb+=(tb<90?0.1:-0.1);else f+=(f<90?0.1:-0.1);}
+    if(mode==="femurLast"){
+      if(Math.abs(tb-90)>0.05) tb+=(tb<90?0.1:-0.1); else f+=(f<90?0.1:-0.1);
+    } else {
+      if(Math.abs(tb-90)>=Math.abs(f-90)) tb+=(tb<90?0.1:-0.1); else f+=(f<90?0.1:-0.1);
+    }
+  }
   return {ldfa:r1(f),mpta:r1(tb)};}
 function planned(id){const L=S.ldfa,M=S.mpta;
   if(id==="ma")return{ldfa:90,mpta:90};
   if(id==="ama")return converge(clamp(L,87,93),clamp(M,87,90),3);
   if(id==="ka")return{ldfa:r1(L),mpta:r1(M)};
-  if(id==="rka")return converge(clamp(L,85,95),clamp(M,85,95),3);
+  if(id==="rka")return converge(clamp(L,85,95),clamp(M,85,95),3,"femurLast");
   if(id==="ika")return{ldfa:null,mpta:r1(clamp(M,85,95))};
   return{ldfa:90,mpta:90};}
 /* LDFA is lateral-referenced: raising it toward 90 takes more bone medially.
@@ -1543,11 +1561,12 @@ const HOW_EN={
      "Set the tibial guide to the anatomic slope by placing the dual reference gauge in the cutting slot and matching the native slope, rather than accepting the default 3 degrees.",
      "Set the tibial stylus to resect from the more prominent side and let the worn side take proportionally less.",
      "Verify every resection with a caliper against component thickness before trialling."],
- rka:["Begin exactly as for kinematic alignment, referencing off the unworn condyle with cartilage compensation.",
-      "Where the plan exceeds the boundary, take the correction with the 2 degree varus or 2 degree valgus re-cut guide on the tibia rather than by releasing ligaments.",
-      "For a 1 degree correction, the dual reference gauge can be placed between the re-cut guide and the bone.",
-      "Recheck the limb axis to the ankle with the external alignment guide after any re-cut.",
-      "Verify with a caliper: the correction moves the medial and lateral targets away from component thickness."],
+ rka:["Arithmetic HKA is held within 3 degrees of neutral, and each joint line within 5 degrees of its own mechanical axis.",
+      "Femoral anatomy is preserved first: the tibia absorbs the correction, and the femur is altered only once the tibia reaches neutral.",
+      "Native laxities are restored rather than balanced to gaps, so no ligament release is planned.",
+      "The modification is made on the diseased compartment; the intact compartment is resurfaced as it is.",
+      "Where a correction is needed, take it with the 2 degree varus or valgus re-cut guide on the tibia rather than by releasing.",
+      "Recheck the limb axis to the ankle with the external alignment guide after any re-cut."],
  ika:["Resect the tibia first, restoring the native tibial joint line within the boundary.",
       "Set femoral rotation and the distal cut from the gaps rather than from the radiograph, using the flexion and extension spacer blocks.",
       "The spacer blocks already include femoral condyle, tibial base and insert thickness, so the block that fits indicates the insert.",
@@ -1567,11 +1586,12 @@ const HOW_LT={
      "Blauzdikaulio kreiptuvą nustatykite anatominiam nuolydžiui: įdėkite dvigubos atskaitos matuoklį į pjūvio angą ir suderinkite su natūraliu nuolydžiu, o ne priimkite numatytuosius 3 laipsnius.",
      "Blauzdikaulio stylių nustatykite pjauti nuo prominentiškesnės pusės, o nudilusi pusė proporcingai netenka mažiau.",
      "Kiekvieną rezekciją prieš bandinius patikrinkite kaliperiu pagal komponento storį."],
- rka:["Pradėkite lygiai taip pat kaip kinematiniame atstatyme – atremdami į nenudilusį krumplį su kremzlės kompensacija.",
-      "Kur planas viršija ribą, korekciją atlikite 2 laipsnių varus arba 2 laipsnių valgus perpjovimo kreiptuvu ant blauzdikaulio, o ne atpalaiduodami raiščius.",
-      "1 laipsnio korekcijai tarp perpjovimo kreiptuvo ir kaulo galima įdėti dvigubos atskaitos matuoklį.",
-      "Po bet kurio perpjovimo patikrinkite galūnės ašį iki kulkšnies išoriniu ašies kreiptuvu.",
-      "Tikrinkite kaliperiu: korekcija nutolina medialinį ir lateralinį tikslus nuo komponento storio."],
+ rka:["Aritmetinis HKA i\u0161laikomas 3 laipsni\u0173 ribose nuo neutralios, o kiekviena s\u0105nario linija \u2013 5 laipsni\u0173 ribose nuo savo mechanin\u0117s a\u0161ies.",
+      "Pirmenyb\u0117 teikiama \u0161launikaulio anatomijos i\u0161saugojimui: korekcij\u0105 perima blauzdikaulis, o \u0161launikaulis kei\u010Diamas tik tada, kai blauzdikaulis pasiekia neutrali\u0105 pad\u0117t\u012F.",
+      "Atkuriamas nat\u016Bralus rai\u0161\u010Di\u0173 laisvumas, o ne derinama pagal tarpus, tod\u0117l rai\u0161\u010Di\u0173 atpalaidavimas neplanuojamas.",
+      "Keiti\u010Diamas pa\u017Eeistas skyrius; sveikas skyrius tiesiog padengiamas implantu.",
+      "Kai reikia korekcijos, atlikite j\u0105 2 laipsni\u0173 varus arba valgus perpjovimo kreiptuvu ant blauzdikaulio, o ne atpalaiduodami rai\u0161\u010Dius.",
+      "Po bet kurio perpjovimo patikrinkite gal\u016Bn\u0117s a\u0161\u012F iki kulk\u0161nies i\u0161oriniu a\u0161ies kreiptuvu."],
  ika:["Pirmiausia rezekuokite blauzdikaulį, atkurdami natūralią blauzdikaulio sąnario liniją ribose.",
       "Šlaunikaulio rotaciją ir distalinį pjūvį nustatykite pagal tarpus, o ne pagal rentgenogramą, naudodami lenkimo ir tiesimo tarpiklius.",
       "Tarpikliai jau įskaičiuoja šlaunikaulio krumplio, blauzdikaulio pado ir įdėklo storį, todėl tilpęs tarpiklis nurodo įdėklą.",
@@ -1662,6 +1682,22 @@ function renderBone(c){
     + rows.map(function(r){return esc(r[0])+" "+fmt(r[1])+" / "+fmt(r[2]);}).join("  \u00b7  ")
     + '</span></div>';
 }
+/* Reference figures from the CT series that defined the protocol: 4884 knees,
+   51% of which needed no adjustment at all, with mean corrections of 0.5 deg
+   MPTA and 0.3 deg LDFA — against 3.3 deg and 3.2 deg for mechanical alignment.
+   Showing this knee's corrections beside those means tells the surgeon whether
+   the case in front of them is ordinary or unusual for the protocol. */
+const RKA_REF={noAdjust:51, mptaMean:0.5, ldfaMean:0.3, mptaMA:3.3, ldfaMA:3.2};
+function renderRkaNote(c){
+  const el=document.getElementById("rkanote"); if(!el) return;
+  if(S.strat!=="rka" || c.p.ldfa===null){ el.innerHTML=""; return; }
+  const dF=Math.abs(r1(c.p.ldfa-S.ldfa)), dT=Math.abs(r1(c.p.mpta-S.mpta));
+  const none=(dF<0.05&&dT<0.05);
+  el.innerHTML='<div class="bone '+(none?"eq":"uneq")+'">'
+    + esc(none ? t("rk.none",{p:RKA_REF.noAdjust})
+               : t("rk.corr",{f:fmt(dF),tb:fmt(dT),mf:fmt(RKA_REF.ldfaMean),mt:fmt(RKA_REF.mptaMean)}))
+    + '<span class="vals">'+esc(t("rk.ma",{f:fmt(RKA_REF.ldfaMA),tb:fmt(RKA_REF.mptaMA)}))+'</span></div>';
+}
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
   el.innerHTML=[
@@ -1706,7 +1742,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCpak(); renderStudies(); renderHow(); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCpak(); renderStudies(); renderHow(); renderRkaNote(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
