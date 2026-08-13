@@ -276,6 +276,8 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
   .sheet .two{display:flex;gap:6mm;align-items:flex-start}
   .sheet .col{flex:1 1 auto}
   .sheet .col.narrow{flex:0 0 62mm}
+  .sheet .filmbox{border:0.5pt solid #999;padding:1mm;margin-bottom:1.5mm;text-align:center}
+  .sheet img.film{display:block;width:100%;max-height:76mm;object-fit:contain;margin:0 auto}
 
   .sheet h2{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
     margin:0 0 1.8mm;padding-bottom:1mm;border-bottom:0.8pt solid #000;color:#000}
@@ -837,6 +839,7 @@ const LT={
  "sh.date":"Planuota {d}",
  "sh.resections":"Rezekcijos",
  "sh.blade":"Tikslin\u0117s reik\u0161m\u0117s \u2013 kaulo plok\u0161tel\u0117, matuojama kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis. Leistina paklaida \u00b10,5 mm; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
+ "sh.film":"I\u0161matuota rentgenograma","sh.valgus":"Valgus",
  "c.hdr":"Planas",
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
@@ -1007,6 +1010,7 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "sh.film":"Measured film","sh.valgus":"Valgus",
  "c.hdr":"Plan",
  "c.step4":"4 · Wear","c.result":"Resulting phenotype",
  "c.aboutOpen":"About this calculator",
@@ -2375,6 +2379,84 @@ function sheetLogo(){
    +'<circle cx="20" cy="7.6" r="2.5" fill="#E1F5EE"/><circle cx="20" cy="32.4" r="2.5" fill="#E1F5EE"/>'
    +'<circle cx="17.9" cy="20" r="3.4" fill="#0F6E56" stroke="#E1F5EE" stroke-width="2"/></svg>';
 }
+/* An annotated crop of the film for the sheet. Rendered offscreen at print
+   resolution: the image is cropped to the placed landmarks, the axes and joint
+   lines are drawn over it, and the angles are labelled in the margin with
+   leader lines so the figures stay legible at column width.
+   Returns an empty string when no film has been marked, and the sheet reflows.
+   Note that printing this puts the radiograph on paper — the app itself still
+   never transmits or stores it. */
+function sheetFilm(){
+  if(!M.img || !requiredDone()) return "";
+  const r=measured(); if(!r) return "";
+  const P=M.pts, keys=["hip","fl","fm","tl","tm","ank"].concat(P.sh1&&P.sh2?["sh1","sh2"]:[]);
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  keys.forEach(function(k){
+    x0=Math.min(x0,P[k][0]); x1=Math.max(x1,P[k][0]);
+    y0=Math.min(y0,P[k][1]); y1=Math.max(y1,P[k][1]);
+  });
+  const padX=(x1-x0)*0.45+30, padY=(y1-y0)*0.04+30;
+  x0-=padX; x1+=padX; y0-=padY; y1+=padY;
+  const cw=x1-x0, ch=y1-y0;
+
+  const H=1100, W=Math.max(360,Math.round(H*cw/ch));
+  const cv=document.createElement("canvas");
+  cv.width=W; cv.height=H;
+  const g=cv.getContext("2d");
+  const s=H/ch;
+  const px=function(p){return [(p[0]-x0)*s, (p[1]-y0)*s];};
+
+  g.fillStyle="#ffffff"; g.fillRect(0,0,W,H);
+  g.drawImage(M.img, x0,y0,cw,ch, 0,0,W,H);
+  // lift the film slightly so ink-on-paper stays readable
+  g.fillStyle="rgba(255,255,255,0.14)"; g.fillRect(0,0,W,H);
+
+  const KF=mid2(P.fl,P.fm), KT=mid2(P.tl,P.tm);
+  function ln(a,b,col,w,dash){
+    const p=px(a),q=px(b);
+    g.save(); g.setLineDash(dash||[]); g.beginPath();
+    g.moveTo(p[0],p[1]); g.lineTo(q[0],q[1]);
+    g.strokeStyle=col; g.lineWidth=w; g.stroke(); g.restore();
+  }
+  ln(P.hip,P.ank,"#7F77DD",3,[14,10]);
+  ln(P.hip,KF,"#0F6E56",4);
+  ln(KT,P.ank,"#0F6E56",4);
+  ln(P.fl,P.fm,"#D18A12",5);
+  ln(P.tl,P.tm,"#D18A12",5);
+  if(P.sh1&&P.sh2) ln(P.sh1,P.sh2,"#534AB7",3.5,[10,8]);
+  [["hip","#0F6E56"],["ank","#0F6E56"],["fl","#D18A12"],["fm","#D18A12"],
+   ["tl","#D18A12"],["tm","#D18A12"]].forEach(function(d){
+    const q=px(P[d[0]]);
+    g.beginPath(); g.arc(q[0],q[1],9,0,7);
+    g.fillStyle=d[1]; g.fill(); g.lineWidth=3; g.strokeStyle="#fff"; g.stroke();
+  });
+
+  /* Callouts sit in the padding either side of the limb, with a leader line
+     back to the structure they describe. */
+  g.font="600 30px -apple-system, Segoe UI, Roboto, sans-serif";
+  g.textBaseline="middle";
+  function callout(anchor, label, side){
+    const a=px(anchor);
+    const lx = side<0 ? Math.max(14, a[0]-W*0.30) : Math.min(W-14, a[0]+W*0.30);
+    const w=g.measureText(label).width+22;
+    const bx = side<0 ? lx-4 : lx-w+4;
+    g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(lx+(side<0?w-6:-w+6), a[1]);
+    g.strokeStyle="#333"; g.lineWidth=2; g.stroke();
+    g.fillStyle="#ffffff"; g.strokeStyle="#333"; g.lineWidth=2;
+    g.beginPath(); g.rect(side<0?lx-2:lx-w+2, a[1]-21, w, 42); g.fill(); g.stroke();
+    g.fillStyle="#111";
+    g.textAlign="center";
+    g.fillText(label, (side<0?lx-2:lx-w+2)+w/2, a[1]+1);
+  }
+  callout(KF, "LDFA "+fmt(r.ldfa)+"\u00b0", -1);
+  callout(KT, "MPTA "+fmt(r.mpta)+"\u00b0", 1);
+  callout(mid2(KF,KT), "HKA "+sgn(r.hka)+"\u00b0", -1);
+  if(r.ama!==null){
+    const shaftMid=mid2(P.sh1||P.hip, P.sh2||KF);
+    callout(shaftMid, t("sh.valgus")+" "+fmt(r.ama)+"\u00b0", 1);
+  }
+  return '<img class="film" src="'+cv.toDataURL("image/jpeg",0.82)+'" alt="">';
+}
 function buildSheet(){
   const c=cuts(S.strat);
   const el=document.getElementById("sheet"); if(!el) return;
@@ -2431,7 +2513,9 @@ function buildSheet(){
    +'</div>'
 
    +'<div class="col narrow">'
-   +'<h2>'+esc(t("sh.plan"))+'</h2>'
+   + (function(){ const f=sheetFilm();
+       return f ? '<h2>'+esc(t("sh.film"))+'</h2><div class="filmbox">'+f+'</div>' : ''; })()
+   +'<h2'+(M.img?' class="sp"':'')+'>'+esc(t("sh.plan"))+'</h2>'
    +'<table class="ft">'
    + facts.map(function(f){
        return '<tr><td>'+esc(f[0])+'</td><td class="n">'+esc(f[1])+'</td></tr>';}).join("")
