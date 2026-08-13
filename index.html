@@ -247,7 +247,8 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 @media print{
   body{background:#fff;margin:0}
   .app{max-width:none;min-height:0}
-  .app>.topbar,.app>main,nav,.cred{display:none !important}
+  .app>*{display:none !important}
+  .app>#sheet{display:block !important}
   .sheet{display:block;color:#000;font-size:9.5pt;line-height:1.35;
     font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
 
