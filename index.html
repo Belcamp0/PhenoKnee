@@ -261,6 +261,12 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .bnote{font-size:12px;opacity:.8}
 .gcall.ok .bnote{color:var(--within-tx)} .gcall.warn .bnote{color:var(--edge-tx)}
 .gna{margin:0;font-size:12.5px;line-height:1.5;color:var(--bone)}
+.gwait{margin:3px 0 0;font-size:15px;font-weight:500;color:var(--bone)}
+.gsteps{margin:9px 0 0;padding-left:19px;font-size:12.5px;line-height:1.5;color:var(--bone)}
+.gsteps li{margin-bottom:4px}
+.gsteps li.now{color:var(--teal);font-weight:500}
+.gsteps li.done{opacity:.45;text-decoration:line-through}
+.gwhy{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--bone);opacity:.85}
 .bone{border-radius:10px;padding:11px 13px;margin:10px 0;font-size:12.5px;line-height:1.55}
 .bone.eq{background:var(--within-bg);color:var(--within-tx)}
 .bone.uneq{background:var(--edge-bg);color:var(--edge-tx)}
@@ -686,7 +692,11 @@ const LT={
  "c.amaLo":"ma\u017Eas","c.amaHi":"didelis",
  "gd.head":"Distalinis \u0161launikaulio kreiptuvas: {v}\u00b0 valgus nuo intramedulinio strypo.",
  "gd.bush":"artimiausia \u012Fvor\u0117 {b}\u00b0","gd.off":"lieka {v}\u00b0 nuokrypio",
- "gd.needAma":"Kreiptuvo kampo dar n\u0117ra. Jis priklauso nuo kampo tarp \u0161launikaulio diafiz\u0117s ir mechanin\u0117s a\u0161ies, kuris tarp to paties LDFA \u0161launikauli\u0173 skiriasi keliais laipsniais ir i\u0161 s\u0105nario kamp\u0173 neapskai\u010Diuojamas. Pa\u017Eym\u0117kite \u0161launikaulio kanal\u0105 Matavimo skirtuke ir jis \u010Dia atsiras.",
+ "gd.pending":"Kol kas negalima",
+ "gd.sImg":"Atidarykite stovint darytą rentgenogramą Matavimo skirtuke",
+ "gd.sPts":"Pažymėkite šešis privalomus orientyrus",
+ "gd.sCanal":"Pažymėkite šlaunikaulio kanalą – proksimaliai ir distaliai",
+ "gd.why":"Kampas tarp šlaunikaulio diafizės ir mechaninės ašies tarp to paties LDFA šlaunikaulių skiriasi keliais laipsniais, todėl jo negalima nei numatyti, nei apskaičiuoti iš sąnario kampų.",
  "c.savedNext":"Atvejis \u012Fra\u0161ytas. I\u0161valyti j\u012F ir prad\u0117ti kit\u0105?",
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
@@ -848,12 +858,16 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "gd.pending":"Not available yet",
+ "gd.sImg":"Open a standing radiograph on the Measure tab",
+ "gd.sPts":"Place the six required landmarks",
+ "gd.sCanal":"Mark the femoral canal, proximal and distal",
+ "gd.why":"The angle between the femoral shaft and the mechanical axis varies by several degrees between femurs with the same LDFA, so it cannot be assumed or derived from the joint line angles.",
  "c.savedNext":"Case saved. Clear it and start the next one?",
  "c.new":"New case",
  "c.newConfirm":"Clear this case? Angles, wear, landmarks, the radiograph and any theatre measurements will be discarded.",
  "c.entered":"Values entered by hand. Mark a radiograph on the Measure tab to derive them.",
  "c.fromFilm":"<b>Angles measured from a radiograph</b>, including the anatomic–mechanical angle.",
- "gd.needAma":"No guide angle yet. It depends on the angle between the femoral shaft and the mechanical axis, which varies by several degrees between femurs with the same LDFA and cannot be derived from the joint line angles. Mark the femoral canal on the Measure tab and it will appear here.",
  "m.optional":"optional",
  "m.ama":"Anatomic–mechanical angle","m.amaNo":"mark the canal to derive",
  "gd.amaM":"anatomic–mechanical angle {v}°, measured from the film",
@@ -2043,8 +2057,29 @@ function renderGuide(c){
      several degrees between femurs of the same LDFA. Prompt for the
      measurement instead of inventing the result. */
   if(!S.amaMeasured){
-    el.innerHTML='<div class="gcall na"><p class="glab">'+esc(t("gd.lab"))+'</p>'
-      + '<p class="gna">'+esc(t("gd.needAma"))+'</p></div>';
+    /* The guide angle only exists once the femoral canal has been marked on a
+       film. Say which step is outstanding rather than giving one message for
+       four different situations — a surgeon should not have to guess whether
+       the tool wants an image, the landmarks, or the canal pair. */
+    const stage = !M.img ? "img"
+                : !requiredDone() ? "pts"
+                : "canal";
+    const steps=[
+      ["img",   t("gd.sImg")],
+      ["pts",   t("gd.sPts")],
+      ["canal", t("gd.sCanal")]
+    ];
+    const at=steps.findIndex(function(s){return s[0]===stage;});
+    el.innerHTML='<div class="gcall na">'
+      + '<p class="glab">'+esc(t("gd.lab"))+'</p>'
+      + '<p class="gwait">'+esc(t("gd.pending"))+'</p>'
+      + '<ol class="gsteps">'
+      + steps.map(function(s,i){
+          const cls = i<at ? "done" : i===at ? "now" : "";
+          return '<li class="'+cls+'">'+esc(s[1])+'</li>';
+        }).join("")
+      + '</ol>'
+      + '<p class="gwhy">'+esc(t("gd.why"))+'</p></div>';
     return;
   }
   const g=guideValgus(c.p.ldfa);
