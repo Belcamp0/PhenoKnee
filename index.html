@@ -49,6 +49,7 @@ h2{font-size:13px;font-weight:400;color:var(--bone);margin:20px 0 8px}
 section h2:first-child{margin-top:0}
 .fld{display:flex;justify-content:space-between;align-items:center;gap:12px;
   padding:10px 0;border-bottom:.5px solid var(--border);font-size:15px}
+.fld input[type=text],.fld input[type=date]{font-family:inherit;font-size:15px;width:150px;text-align:right}
 .fld input{font:inherit;font-family:var(--mono);font-size:17px;width:96px;text-align:right;
   padding:10px 12px;min-height:44px;border:.5px solid var(--border);border-radius:8px;background:var(--surface)}
 .fld .hint{display:block;font-size:12px;color:var(--bone)}
@@ -238,33 +239,69 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .about p:last-child{margin:0}
 .about .lead{font-size:15px;font-weight:500;line-height:1.4;color:var(--teal)}
 .about .small{font-size:12px;color:#4A7566}
-/* The sheet is built in the page but only ever painted by the printer, so a
-   surgeon gets a page that matches the plan exactly rather than a screenshot. */
+/* The sheet exists in the page but is only ever painted by the printer, so the
+   surgeon gets a document that matches the plan exactly. Sized to one A4 page:
+   two columns, no delta column, and a ruled box to write the calipered figure
+   into rather than a second printed number. */
 .sheet{display:none}
 @media print{
-  body{background:#fff}
-  .app>.topbar, .app>main, nav, .cred, #btn-print{display:none !important}
-  .sheet{display:block;padding:0;color:#000;font-size:11pt}
-  .sheet h1{font-size:15pt;margin:0 0 2mm;font-weight:600}
-  .sheet .meta{font-size:9.5pt;color:#333;margin:0 0 5mm;line-height:1.45}
-  .sheet table{width:100%;border-collapse:collapse;margin-bottom:5mm}
-  .sheet th{font-size:8.5pt;font-weight:600;text-align:left;text-transform:uppercase;
-    letter-spacing:.04em;border-bottom:1pt solid #000;padding:1.5mm 1mm}
-  .sheet th.n,.sheet td.n{text-align:right}
-  .sheet td{padding:2.2mm 1mm;border-bottom:0.4pt solid #bbb;font-size:11pt}
-  .sheet td.tgt{font-family:monospace;font-weight:600}
-  .sheet td.box{border-bottom:0.4pt solid #bbb}
-  .sheet .blank{display:inline-block;width:22mm;border-bottom:0.7pt solid #000;height:5mm}
-  .sheet h2{font-size:9.5pt;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
-    margin:0 0 2mm;border-bottom:1pt solid #000;padding-bottom:1mm}
-  .sheet .checks li{font-size:10pt;margin-bottom:2.5mm;list-style:none}
-  .sheet .checks{padding:0;margin:0 0 5mm}
-  .sheet .checks .bx{display:inline-block;width:4mm;height:4mm;border:0.8pt solid #000;
-    margin-right:2.5mm;vertical-align:-0.5mm}
-  .sheet .foot{font-size:8pt;color:#444;border-top:0.4pt solid #999;padding-top:2mm;line-height:1.5}
-  .sheet .cols{display:flex;gap:8mm}
-  .sheet .cols>div{flex:1}
-  @page{margin:14mm}
+  body{background:#fff;margin:0}
+  .app{max-width:none;min-height:0}
+  .app>.topbar,.app>main,nav,.cred{display:none !important}
+  .sheet{display:block;color:#000;font-size:9.5pt;line-height:1.35;
+    font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
+
+  .sheet .mast{display:flex;align-items:center;gap:4mm;
+    border-bottom:1.6pt solid #0F6E56;padding-bottom:2.5mm;margin-bottom:3mm}
+  .sheet .mast svg{flex:0 0 auto}
+  .sheet .mt{flex:1 1 auto}
+  .sheet .mn{font-size:14pt;font-weight:700;letter-spacing:-0.2pt;line-height:1;color:#0F6E56}
+  .sheet .ms{font-size:9pt;color:#333;margin-top:0.6mm}
+  .sheet .mr{text-align:right;font-size:9pt;font-weight:600;line-height:1.25}
+  .sheet .mr span{font-weight:400;font-size:8pt;color:#555}
+
+  .sheet .idt{width:100%;border-collapse:collapse;margin-bottom:4mm}
+  .sheet .idt td{border:0.5pt solid #999;padding:1.6mm 2mm;width:25%;vertical-align:top}
+  .sheet .idt .k{display:block;font-size:6.8pt;text-transform:uppercase;
+    letter-spacing:.05em;color:#555;margin-bottom:0.8mm}
+  .sheet .idt .w{display:block;font-size:10pt;font-weight:600;min-height:4.6mm}
+
+  .sheet .two{display:flex;gap:6mm;align-items:flex-start}
+  .sheet .col{flex:1 1 auto}
+  .sheet .col.narrow{flex:0 0 62mm}
+
+  .sheet h2{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    margin:0 0 1.8mm;padding-bottom:1mm;border-bottom:0.8pt solid #000;color:#000}
+  .sheet h2.sp{margin-top:5mm}
+
+  .sheet table.rt,.sheet table.ft{width:100%;border-collapse:collapse}
+  .sheet .rt th{font-size:6.8pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    text-align:left;color:#555;padding:0 1mm 1.2mm}
+  .sheet .rt th.n,.sheet .rt td.n{text-align:right}
+  .sheet .rt th.w2{width:26mm}
+  .sheet .rt td{padding:2.4mm 1mm;border-bottom:0.5pt solid #c4c4c4;font-size:9.5pt}
+  .sheet .rt td em{font-style:normal;color:#555;font-size:8pt}
+  .sheet .rt td.tgt{font-family:monospace;font-weight:700;font-size:11pt;width:20mm}
+  .sheet .rt td.rule{border-bottom:0.9pt solid #000;height:6.5mm}
+  .sheet .tol{font-size:7.4pt;color:#444;margin:2mm 0 0;line-height:1.4}
+
+  .sheet .ft td{padding:1.5mm 1mm;border-bottom:0.5pt solid #d8d8d8;font-size:8.6pt}
+  .sheet .ft td.n{text-align:right;font-family:monospace;font-weight:600}
+
+  .sheet .checks{list-style:none;padding:0;margin:0}
+  .sheet .checks li{font-size:8.2pt;margin-bottom:2.4mm;line-height:1.3;
+    padding-left:6mm;text-indent:-6mm}
+  .sheet .checks .bx{display:inline-block;width:3.6mm;height:3.6mm;border:0.8pt solid #000;
+    margin-right:2.4mm;vertical-align:-0.4mm}
+
+  .sheet .sig{margin-top:6mm}
+  .sheet .sig .k{display:block;font-size:6.8pt;text-transform:uppercase;
+    letter-spacing:.05em;color:#555;margin-bottom:1.5mm}
+  .sheet .sig .line{display:block;border-bottom:0.8pt solid #000;height:7mm}
+
+  .sheet .foot{font-size:6.8pt;color:#444;border-top:0.5pt solid #999;
+    padding-top:1.8mm;margin:5mm 0 0;line-height:1.45}
+  @page{size:A4;margin:12mm}
 }
 .cred{padding:20px 16px calc(24px + env(safe-area-inset-bottom));
   border-top:.5px solid var(--border);background:var(--mist)}
@@ -423,6 +460,11 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <div class="strip" id="sizes"></div>
   <div class="chips" id="implchips"></div>
   <p class="lede" id="bladenote"></p>
+  <div class="fld"><label for="i-caseno"><span data-i="c.caseno">Case number</span><span class="hint" data-i="c.casenoH">Your own reference — no patient identifier</span></label>
+    <input id="i-caseno" type="text" inputmode="text" maxlength="16" placeholder="—"></div>
+  <div class="fld"><label for="i-surgdate" data-i="c.surgdate">Date of surgery</label>
+    <input id="i-surgdate" type="date"></div>
+
   <h2 data-i="c.step2">2 · Leg parameters</h2>
   <div class="sldr">
     <div class="top"><label for="i-ldfa">LDFA<span class="hint" data-i="c.ldfaH">Mechanical, to bone contour</span></label>
@@ -559,7 +601,9 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <span><i class="sw" style="background:#888780"></i><span data-i="lg.mech">Mechanical axis</span></span>
   </div>
   <div id="guiderow"></div>
-  <button class="ghost" id="btn-print" data-i="p.print">Print theatre sheet</button>
+  <div class="seg" role="group" style="margin-top:2px">
+    <button id="btn-print" data-i="p.print">Print theatre sheet</button>
+  </div>
 
   <h2 data-i="p.tbl">Resection depths</h2>
   <table><thead><tr>
@@ -763,6 +807,10 @@ const LT={
  "gd.sCanal":"Pažymėkite šlaunikaulio kanalą – proksimaliai ir distaliai",
  "gd.why":"Kampas tarp šlaunikaulio diafizės ir mechaninės ašies tarp to paties LDFA šlaunikaulių skiriasi keliais laipsniais, todėl jo negalima nei numatyti, nei apskaičiuoti iš sąnario kampų.",
  "c.savedNext":"Atvejis \u012Fra\u0161ytas. I\u0161valyti j\u012F ir prad\u0117ti kit\u0105?",
+ "c.caseno":"Atvejo numeris","c.casenoH":"J\u016Bs\u0173 pa\u010Di\u0173 nuoroda \u2013 be paciento duomen\u0173",
+ "c.surgdate":"Operacijos data",
+ "sh.implant":"Implantas","sh.plan":"Planas","sh.signed":"Patikrino",
+ "sh.tol":"\u012Era\u0161ykite kaliperiu i\u0161matuot\u0105 kaulo plok\u0161tel\u0117s stor\u012F. Leistina 0,5 mm nuo tikslo; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
  "p.print":"Spausdinti operacin\u0117s lap\u0105",
  "sh.title":"Rezekcij\u0173 patikros lapas",
  "sh.size":"dydis {v}",
@@ -938,6 +986,10 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "c.caseno":"Case number","c.casenoH":"Your own reference — no patient identifier",
+ "c.surgdate":"Date of surgery",
+ "sh.implant":"Implant","sh.plan":"Plan","sh.signed":"Checked by",
+ "sh.tol":"Enter the calipered slab thickness. Within 0.5 mm of target; medial and lateral tibial thickness at the spine base should agree within 0.5 mm of the planned tilt.",
  "p.print":"Print theatre sheet",
  "sh.title":"Resection verification sheet",
  "sh.size":"size {v}",
@@ -2256,6 +2308,8 @@ function newCase(){
   S.ldfa=90; S.mpta=90; S.hka=0; S.slope=7;
   S.ama=6; S.amaMeasured=false;
   S.wear={dm:0,dl:0,pm:0,pl:0,tm:0,tl:0};
+  ["i-caseno","i-surgdate"].forEach(function(id){
+    const el=document.getElementById(id); if(el) el.value="";});
   ["i-ldfa","i-mpta","i-hka","i-slope"].forEach(function(id){
     const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7}[id];
     document.getElementById(id).value=v.toFixed(1);
@@ -2279,48 +2333,89 @@ function renderCaseLabel(){
   el.textContent = t(S.amaMeasured ? "c.fromFilm" : "c.entered");
   el.className = "caselab" + (S.amaMeasured ? " measured" : "");
 }
-/* The theatre sheet. The verification worksheet is what the technique actually
-   requires be recorded, and nobody holds a phone at the table — so the targets
-   are printed and the measured column is left blank to be written in.
-   Carries no patient identifier, by design. */
+/* The theatre sheet. The verification worksheet is what the technique requires
+   be recorded, and nobody holds a phone at the table. Laid out as a document
+   rather than a rendering of the screen: masthead, case block, target column
+   printed and a ruled column to write the calipered figure into. One page.
+   No delta column — that is arithmetic the surgeon does not need to do on
+   paper, and the tolerance is stated instead. Carries no patient identifier. */
+function sheetLogo(){
+  return '<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">'
+   +'<rect width="40" height="40" rx="9" fill="#0F6E56"/>'
+   +'<line x1="20" y1="6" x2="20" y2="34" stroke="#E1F5EE" stroke-width="1" stroke-opacity=".45" stroke-dasharray="2.4 2.6"/>'
+   +'<path d="M20 7.6 L17.9 20 L20 32.4" fill="none" stroke="#E1F5EE" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>'
+   +'<circle cx="20" cy="7.6" r="2.5" fill="#E1F5EE"/><circle cx="20" cy="32.4" r="2.5" fill="#E1F5EE"/>'
+   +'<circle cx="17.9" cy="20" r="3.4" fill="#0F6E56" stroke="#E1F5EE" stroke-width="2"/></svg>';
+}
 function buildSheet(){
   const c=cuts(S.strat);
   const el=document.getElementById("sheet"); if(!el) return;
   const sh=function(v){return v===null?"\u2014":fmt(S.blade?r1(v-EVO.blade):v);};
-  const rows=[
-    [t("f.dist")+" \u00b7 "+t("su.med"), c.distal?sh(c.distal.med):null],
-    [t("f.dist")+" \u00b7 "+t("su.lat"), c.distal?sh(c.distal.lat):null],
-    [t("f.post")+" \u00b7 "+t("su.med"), sh(c.posterior.med)],
-    [t("f.post")+" \u00b7 "+t("su.lat"), sh(c.posterior.lat)],
-    [t("f.tib")+" \u00b7 "+t("su.med"), sh(c.spine.med)],
-    [t("f.tib")+" \u00b7 "+t("su.lat"), sh(c.spine.lat)]
-  ];
-  const checks=[t("th.q1"),t("th.q2"),t("th.q3")];
+  const caseNo=(document.getElementById("i-caseno").value||"").trim();
+  const sd=document.getElementById("i-surgdate").value;
+  const loc=LANG==="lt"?"lt-LT":"en-GB";
+  const surgDate= sd ? new Date(sd+"T00:00").toLocaleDateString(loc) : "";
   const g=S.amaMeasured?guideValgus(c.p.ldfa):null;
+
+  const rows=[
+    [t("f.dist"), t("su.med"), c.distal?sh(c.distal.med):null],
+    [t("f.dist"), t("su.lat"), c.distal?sh(c.distal.lat):null],
+    [t("f.post"), t("su.med"), sh(c.posterior.med)],
+    [t("f.post"), t("su.lat"), sh(c.posterior.lat)],
+    [t("f.tib"),  t("su.med"), sh(c.spine.med)],
+    [t("f.tib"),  t("su.lat"), sh(c.spine.lat)]
+  ];
+  const facts=[
+    ["LDFA", fmt(S.ldfa)+"\u00b0"],
+    ["MPTA", fmt(S.mpta)+"\u00b0"],
+    ["aHKA", sgn(r1(S.mpta-S.ldfa))+"\u00b0"],
+    [t("ax.hka"), c.hka===null?"\u2014":sgn(c.hka)+"\u00b0"],
+    [t("c.slope"), fmt(S.slope)+"\u00b0"],
+    [t("c.blade"), fmt(EVO.blade,2)+" mm"]
+  ];
+  if(g!==null) facts.push([t("gd.lab"), fmt(g)+"\u00b0 "+t("gd.valgus")]);
+
   el.innerHTML=
-    '<h1>'+esc(t("sh.title"))+'</h1>'
-   +'<p class="meta">'
-     + esc(t("s."+S.strat+"F"))+' \u00b7 '+esc(t(S.side==="right"?"c.right":"c.left"))
-     + ' \u00b7 Evolution MP '+esc(t("sh.size",{v:S.size}))
-     + '<br>LDFA '+esc(fmt(S.ldfa))+'\u00b0 \u00b7 MPTA '+esc(fmt(S.mpta))+'\u00b0'
-     + ' \u00b7 '+esc(t("ax.hka"))+' '+esc(c.hka===null?"\u2014":sgn(c.hka))+'\u00b0'
-     + ' \u00b7 '+esc(t("c.blade"))+' '+esc(fmt(EVO.blade,2))+' mm'
-     + (g!==null ? '<br>'+esc(t("gd.lab"))+': '+esc(fmt(g))+'\u00b0 '+esc(t("gd.valgus")) : '')
-     + '<br>'+esc(t("sh.date",{d:new Date().toLocaleDateString(LANG==="lt"?"lt-LT":"en-GB")}))
-   +'</p>'
+    '<div class="mast">'+sheetLogo()
+   +'<div class="mt"><div class="mn">PhenoKnee</div>'
+   +'<div class="ms">'+esc(t("sh.title"))+'</div></div>'
+   +'<div class="mr">'+esc(t("s."+S.strat+"F"))+'<br><span>'+esc(t("ab."+S.strat))+'</span></div></div>'
+
+   +'<table class="idt"><tr>'
+   +'<td><span class="k">'+esc(t("c.caseno"))+'</span><span class="w">'+esc(caseNo)+'</span></td>'
+   +'<td><span class="k">'+esc(t("c.surgdate"))+'</span><span class="w">'+esc(surgDate)+'</span></td>'
+   +'<td><span class="k">'+esc(t("c.side"))+'</span><span class="w">'+esc(t(S.side==="right"?"c.right":"c.left"))+'</span></td>'
+   +'<td><span class="k">'+esc(t("sh.implant"))+'</span><span class="w">Evolution MP \u00b7 '+esc(t("sh.size",{v:S.size}))+'</span></td>'
+   +'</tr></table>'
+
+   +'<div class="two">'
+   +'<div class="col">'
    +'<h2>'+esc(t("sh.resections"))+'</h2>'
-   +'<table><thead><tr><th>'+esc(t("th.cut"))+'</th><th class="n">'+esc(t("th.tgt"))
-     +'</th><th class="n">'+esc(t("th.meas"))+'</th><th class="n">'+esc(t("th.delta"))+'</th></tr></thead><tbody>'
+   +'<table class="rt"><thead><tr><th>'+esc(t("th.cut"))+'</th>'
+     +'<th class="n">'+esc(t("th.tgt"))+'</th><th class="n w2">'+esc(t("th.meas"))+'</th></tr></thead><tbody>'
    + rows.map(function(r){
-       return '<tr><td>'+esc(r[0])+'</td><td class="n tgt">'+esc(r[1]===null?"\u2014":r[1])
-            +'</td><td class="n box"><span class="blank"></span></td>'
-            +'<td class="n box"><span class="blank"></span></td></tr>';
+       return '<tr><td>'+esc(r[0])+' <em>'+esc(r[1])+'</em></td>'
+            +'<td class="n tgt">'+esc(r[2]===null?"\u2014":r[2])+'</td>'
+            +'<td class="n rule"></td></tr>';
      }).join("")
    +'</tbody></table>'
-   +'<div class="cols"><div>'
-   +'<h2>'+esc(t("th.checks"))+'</h2><ul class="checks">'
-   + checks.map(function(q){return '<li><span class="bx"></span>'+esc(q)+'</li>';}).join("")
-   +'</ul></div></div>'
+   +'<p class="tol">'+esc(t("sh.tol"))+'</p>'
+   +'</div>'
+
+   +'<div class="col narrow">'
+   +'<h2>'+esc(t("sh.plan"))+'</h2>'
+   +'<table class="ft">'
+   + facts.map(function(f){
+       return '<tr><td>'+esc(f[0])+'</td><td class="n">'+esc(f[1])+'</td></tr>';}).join("")
+   +'</table>'
+   +'<h2 class="sp">'+esc(t("th.checks"))+'</h2>'
+   +'<ul class="checks">'
+   + [t("th.q1"),t("th.q2"),t("th.q3")].map(function(q){
+       return '<li><span class="bx"></span>'+esc(q)+'</li>';}).join("")
+   +'</ul>'
+   +'<div class="sig"><span class="k">'+esc(t("sh.signed"))+'</span><span class="line"></span></div>'
+   +'</div></div>'
+
    +'<p class="foot">'+esc(t("sh.blade",{v:fmt(EVO.blade,2)}))+'<br>'
    + esc(t("cr.by"))+' \u00b7 '+esc(t("cr.dis"))+'</p>';
 }
