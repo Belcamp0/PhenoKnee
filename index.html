@@ -123,16 +123,37 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .pickfile{display:block;text-align:center;padding:22px 16px;border:1.5px dashed var(--border);
   border-radius:12px;color:var(--bone);font-size:15px;cursor:pointer;margin:14px 0}
 .pickfile:hover{border-color:var(--teal);color:var(--teal)}
-.cwrap{position:relative;background:#151412;border-radius:12px;overflow:hidden;margin-bottom:12px}
+.stage{position:relative;background:#0E0D0C;border-radius:12px;overflow:hidden;
+  touch-action:none;user-select:none;margin-bottom:10px}
+#cv{display:block;width:100%;cursor:crosshair}
+.loupe{position:absolute;top:8px;right:8px;width:124px;height:124px;border-radius:10px;
+  border:1.5px solid var(--teal-pale);box-shadow:0 2px 10px rgba(0,0,0,.45);
+  pointer-events:none;background:#0E0D0C;opacity:0;transition:opacity .12s}
+.loupe.on{opacity:1}
+.loupe.left{right:auto;left:8px}
+.zbadge{position:absolute;left:8px;bottom:8px;background:rgba(14,13,12,.72);color:#fff;
+  font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;pointer-events:none}
+.regions{display:flex;gap:6px;margin-bottom:9px}
+.regions button{flex:1;font:inherit;font-size:12.5px;min-height:46px;border-radius:9px;
+  border:.5px solid var(--border);background:var(--surface);color:var(--bone);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15}
+.regions button[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.regions .cnt{font-size:10.5px;opacity:.75;font-family:var(--mono)}
+.regions button.opt[aria-pressed="false"]{border-style:dashed}
+.mprompt{background:var(--teal);color:var(--drape);border-radius:10px;padding:11px 13px;
+  font-size:14px;line-height:1.45;margin-bottom:10px}
+.mprompt b{display:block;font-size:11.5px;color:var(--teal-pale);font-weight:400;margin-bottom:2px}
+.nudge{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:168px;margin:10px auto 4px}
+.nudge button{font:inherit;font-size:17px;min-height:44px;border-radius:9px;
+  border:.5px solid var(--border);background:var(--surface);color:var(--teal);cursor:pointer}
+.nudge .sp{visibility:hidden}
+.nudgelab{text-align:center;font-size:11.5px;color:var(--bone);margin:0 0 12px}
+.munc{border-radius:9px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-top:10px}
+.munc.good{background:var(--within-bg);color:var(--within-tx)}
+.munc.poor{background:var(--edge-bg);color:var(--edge-tx)}
 #cv{display:block;width:100%;touch-action:none;cursor:crosshair}
 .loupe{position:absolute;width:132px;height:132px;border-radius:50%;
   border:2px solid var(--teal);box-shadow:0 2px 10px rgba(0,0,0,.4);pointer-events:none}
-.stepnow{background:var(--teal);color:var(--drape);border-radius:10px;padding:11px 13px;
-  font-size:14px;line-height:1.45;margin-bottom:10px}
-.stepnow b{display:block;font-size:12px;color:var(--teal-pale);font-weight:400;margin-bottom:2px}
-.lmk{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.lmk span{font-size:11px;padding:5px 9px;border-radius:20px;background:var(--mist);color:var(--bone)}
-.lmk span.done{background:var(--within-bg);color:var(--within-tx)}
 .btnrow{display:flex;gap:10px;margin-bottom:12px}
 .btnrow>*{flex:1;margin-top:0}
 .cta2{width:100%;font:inherit;background:var(--teal);color:var(--drape);text-align:center;
@@ -411,22 +432,35 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <label class="pickfile" for="img-in"><span data-i="m.pick">Choose a standing long-leg radiograph</span></label>
   <input id="img-in" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">
 
-  <div id="canvaswrap" class="cwrap hidden">
-    <canvas id="cv"></canvas>
-    <canvas id="loupe" class="loupe hidden"></canvas>
-  </div>
+  <div id="measbody" class="hidden">
+    <div class="regions" id="mregions"></div>
+    <div class="mprompt" id="mprompt"></div>
 
-  <div id="stepnow" class="stepnow hidden"></div>
-  <div id="landmarks" class="lmk hidden"></div>
+    <div class="stage" id="mstage">
+      <canvas id="cv"></canvas>
+      <canvas class="loupe" id="loupe" width="124" height="124"></canvas>
+      <div class="zbadge" id="zbadge">1×</div>
+    </div>
 
-  <div class="btnrow hidden" id="measbtns">
-    <button class="ghost" id="btn-undo" data-i="m.undo">Undo point</button>
-    <button class="ghost" id="btn-reset" data-i="m.resetpts">Start over</button>
+    <div class="btnrow">
+      <button class="ghost" id="btn-fit" data-i="m.fit">Fit</button>
+      <button class="ghost" id="btn-zoomto" data-i="m.zoomto">Zoom in</button>
+      <button class="ghost" id="btn-undo" data-i="m.undo">Undo</button>
+      <button class="ghost" id="btn-reset" data-i="m.resetpts">Start over</button>
+    </div>
+
+    <div class="nudge" id="nudge">
+      <button class="sp"></button><button data-n="up">↑</button><button class="sp"></button>
+      <button data-n="left">←</button><button data-n="ctr">⊕</button><button data-n="right">→</button>
+      <button class="sp"></button><button data-n="down">↓</button><button class="sp"></button>
+    </div>
+    <p class="nudgelab" id="nudgelab"></p>
   </div>
 
   <div id="measout" class="hidden">
     <h2 data-i="m.results">Measured angles</h2>
     <table><tbody id="mtbl"></tbody></table>
+    <div class="munc" id="munc"></div>
     <button class="cta2" id="btn-apply" data-i="m.apply">Use these values in the plan</button>
   </div>
   <div class="dis" data-i="m.dis">Trigonometry on landmarks you placed. Not an automatic measurement, not a medical device, not for clinical decision-making.</div>
@@ -702,6 +736,15 @@ const LT={
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
  "c.entered":"Reik\u0161m\u0117s \u012Fvestos ranka. Pa\u017Eym\u0117kite rentgenogram\u0105 Matavimo skirtuke, kad b\u016Bt\u0173 apskai\u010Diuotos.",
  "c.fromFilm":"<b>Kampai i\u0161matuoti i\u0161 rentgenogramos</b>, \u012Fskaitant anatomin\u0117s ir mechanin\u0117s a\u0161ies kamp\u0105.",
+ "m.rKnee":"Kelias","m.rHip":"Klubas","m.rAnkle":"Kulk\u0161nis","m.rShaft":"Diafiz\u0117",
+ "m.fit":"Sutalpinti","m.zoomto":"Priartinti",
+ "m.doneAll":"Visi orientyrai pa\u017Eym\u0117ti",
+ "m.refine":"Pasirinkite ta\u0161k\u0105 ir tikslinkite j\u012F po vien\u0105 rentgenogramos pikselį.",
+ "m.next":"Pereikite prie srities: {r}.",
+ "m.nudging":"tikslinama: {p} \u2013 po vien\u0105 pikselį",
+ "m.nudgeHint":"pasirinkite pa\u017Eym\u0117t\u0105 ta\u0161k\u0105, kad j\u012F tikslintum\u0117te",
+ "m.uncOk":"Esant \u0161iam mastui ta\u0161k\u0173 tikslumas apie \u00b1{v}\u00b0 s\u0105nario lini\u0173 kampams.",
+ "m.uncPoor":"Esant \u0161iam mastui s\u0105nario lini\u0173 kampai turi apie \u00b1{v}\u00b0 paklaid\u0105. Priartinkite kel\u012F ir patikslinkite keturis s\u0105nario ta\u0161kus.",
  "m.optional":"neprivaloma",
  "m.ama":"Anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas","m.amaNo":"pa\u017Eym\u0117kite kanal\u0105",
  "gd.amaM":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, i\u0161matuotas",
@@ -858,6 +901,15 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "m.rKnee":"Knee","m.rHip":"Hip","m.rAnkle":"Ankle","m.rShaft":"Shaft",
+ "m.fit":"Fit","m.zoomto":"Zoom in",
+ "m.doneAll":"All landmarks placed",
+ "m.refine":"Select a point and use the pad to refine it by one film pixel.",
+ "m.next":"Move on to the {r} region.",
+ "m.nudging":"nudging {p} — one film pixel per press",
+ "m.nudgeHint":"select a placed point to nudge it",
+ "m.uncOk":"Placement precision at this zoom is about ±{v}° on the joint line angles.",
+ "m.uncPoor":"At this zoom the joint line angles carry about ±{v}°. Zoom further into the knee and nudge the four joint points to tighten it.",
  "gd.pending":"Not available yet",
  "gd.sImg":"Open a standing radiograph on the Measure tab",
  "gd.sPts":"Place the six required landmarks",
@@ -2114,11 +2166,9 @@ function newCase(){
   document.querySelectorAll("[data-side]").forEach(function(x){
     x.setAttribute("aria-pressed",String(x.dataset.side==="right"));});
   // measurement landmarks and the image itself
-  M.pts={}; M.order=[]; M.img=null;
-  const cw=document.getElementById("canvaswrap");
-  if(cw) cw.classList.add("hidden");
-  ["stepnow","landmarks","measbtns"].forEach(function(id){
-    const el=document.getElementById(id); if(el) el.classList.add("hidden");});
+  M.pts={}; M.order=[]; M.sel=null; M.img=null; M.region=0;
+  const mb=document.getElementById("measbody");
+  if(mb) mb.classList.add("hidden");
   const mo=document.getElementById("measout"); if(mo) mo.classList.add("hidden");
   // theatre entries
   TH.meas={}; TH.conf={};
@@ -2266,119 +2316,348 @@ const LM_STEPS=[
        en:["Femoral canal, distal","Centre of the canal just above the flare"],
        lt:["Šlaunikaulio kanalas, distaliai","Kanalo vidurys ties diafizės praplatėjimu"]}
 ];
-const M={img:null, pts:{}, order:[], drag:null, scale:1};
+/* Landmark placement.
 
+   The measurement is limited by two short baselines, not by the six points
+   equally: the mechanical axes span hundreds of millimetres and tolerate a
+   loose click, while the joint lines span about fifty and do not. At full-film
+   scale one screen pixel is over a millimetre of anatomy, which puts more than
+   ten degrees of error on LDFA. So the module is built around zooming into the
+   joint, grouping the prompts by region, and letting each point be nudged one
+   film pixel at a time. */
+const M={img:null, pts:{}, order:[], sel:null,
+         V:{scale:1,tx:0,ty:0}, region:0,
+         drag:null, pan:null, pinch:null, pointers:new Map()};
+
+const M_REGIONS=[
+  {id:"knee", nameKey:"m.rKnee",  pts:["fl","fm","tl","tm"]},
+  {id:"hip",  nameKey:"m.rHip",   pts:["hip"]},
+  {id:"ank",  nameKey:"m.rAnkle", pts:["ank"]},
+  {id:"shaft",nameKey:"m.rShaft", pts:["sh1","sh2"], opt:true}
+];
+const M_COLOR={fl:"#EF9F27",fm:"#EF9F27",tl:"#EF9F27",tm:"#EF9F27",
+               hip:"#4E92B8",ank:"#4E92B8",sh1:"#7F77DD",sh2:"#7F77DD"};
+const LM_BY_KEY={};
+LM_STEPS.forEach(function(s){ LM_BY_KEY[s.k]=s; });
+
+const cvEl=()=>document.getElementById("cv");
+const stageEl=()=>document.getElementById("mstage");
+const viewW=()=>cvEl().width/ (window.devicePixelRatio||1);
+const viewH=()=>cvEl().height/(window.devicePixelRatio||1);
+
+function sizeCanvas(){
+  const cv=cvEl(), st=stageEl(); if(!cv||!st||!M.img) return;
+  const dpr=window.devicePixelRatio||1, w=st.clientWidth||360;
+  cv.width=Math.round(w*dpr); cv.height=Math.round(w*1.3*dpr);
+  cv.style.height=(w*1.3)+"px";
+  cv.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
+}
+function mFit(){
+  if(!M.img) return;
+  const s=Math.min(viewW()/M.img.naturalWidth, viewH()/M.img.naturalHeight);
+  M.V.scale=s;
+  M.V.tx=(viewW()-M.img.naturalWidth*s)/2;
+  M.V.ty=(viewH()-M.img.naturalHeight*s)/2;
+}
+function mClamp(){
+  if(!M.img) return;
+  const w=M.img.naturalWidth*M.V.scale, h=M.img.naturalHeight*M.V.scale;
+  M.V.tx = w<viewW() ? (viewW()-w)/2 : clamp(M.V.tx, viewW()-w, 0);
+  M.V.ty = h<viewH() ? (viewH()-h)/2 : clamp(M.V.ty, viewH()-h, 0);
+}
+function mFocus(cx,cy,scale){
+  M.V.scale=scale;
+  M.V.tx=viewW()/2-cx*scale; M.V.ty=viewH()/2-cy*scale;
+  mClamp();
+}
+const toScreen=p=>[p[0]*M.V.scale+M.V.tx, p[1]*M.V.scale+M.V.ty];
+const toFilm=(x,y)=>[(x-M.V.tx)/M.V.scale, (y-M.V.ty)/M.V.scale];
+const mid2=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+
+function mPending(){
+  const r=M_REGIONS[M.region];
+  return r.pts.find(function(k){return !M.pts[k];}) || null;
+}
+function requiredDone(){
+  return LM_STEPS.filter(function(s){return !s.opt;})
+    .every(function(s){return !!M.pts[s.k];});
+}
+function mFrame(){
+  if(!M.img) return;
+  const r=M_REGIONS[M.region];
+  const have=r.pts.filter(function(k){return M.pts[k];}).map(function(k){return M.pts[k];});
+  const W=M.img.naturalWidth, H=M.img.naturalHeight;
+  if(have.length){
+    const cx=have.reduce(function(a,p){return a+p[0];},0)/have.length;
+    const cy=have.reduce(function(a,p){return a+p[1];},0)/have.length;
+    mFocus(cx,cy,Math.max(M.V.scale, viewW()/W*3)); return;
+  }
+  const KF=(M.pts.fl&&M.pts.fm)?mid2(M.pts.fl,M.pts.fm):null;
+  const cx=KF?KF[0]:W/2, base=viewW()/W*3;
+  if(r.id==="knee")      mFocus(W/2, H*0.55, base);
+  else if(r.id==="hip")  mFocus(cx,  H*0.09, base);
+  else if(r.id==="ank")  mFocus(cx,  H*0.94, base);
+  else                   mFocus(cx,  H*0.28, base);
+}
+
+/* ---- drawing ---- */
+function mDraw(){
+  const cv=cvEl(); if(!cv||!M.img) return;
+  const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,viewW(),viewH());
+  ctx.imageSmoothingEnabled = M.V.scale<3;    // crisp pixels once magnified
+  ctx.drawImage(M.img, M.V.tx, M.V.ty,
+    M.img.naturalWidth*M.V.scale, M.img.naturalHeight*M.V.scale);
+  const P=M.pts;
+  const KF=(P.fl&&P.fm)?mid2(P.fl,P.fm):null;
+  const KT=(P.tl&&P.tm)?mid2(P.tl,P.tm):null;
+  mLine(ctx,P.hip,KF,"#9FE1CB",2);
+  mLine(ctx,KT,P.ank,"#9FE1CB",2);
+  mLine(ctx,P.hip,P.ank,"#7F77DD",1.2,[7,6]);
+  mLine(ctx,P.fl,P.fm,"#EF9F27",2.4);
+  mLine(ctx,P.tl,P.tm,"#EF9F27",2.4);
+  mLine(ctx,P.sh1,P.sh2,"#7F77DD",2);
+  if(KF) mDot(ctx,KF,"#0F6E56",4,false);
+  if(KT) mDot(ctx,KT,"#0F6E56",4,false);
+  Object.keys(P).forEach(function(k){ mDot(ctx,P[k],M_COLOR[k],7,M.sel===k); });
+  const zb=document.getElementById("zbadge");
+  if(zb) zb.textContent=(M.V.scale/(viewW()/M.img.naturalWidth)).toFixed(1).replace(/\.0$/,"")+"\u00d7";
+}
+function mLine(ctx,a,b,col,w,dash){
+  if(!a||!b) return;
+  const p=toScreen(a), q=toScreen(b);
+  ctx.save(); ctx.setLineDash(dash||[]);
+  ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]);
+  ctx.strokeStyle=col; ctx.lineWidth=w; ctx.stroke(); ctx.restore();
+}
+function mDot(ctx,p,col,r,active){
+  const q=toScreen(p);
+  if(active){
+    ctx.beginPath(); ctx.arc(q[0],q[1],r+7,0,7);
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.globalAlpha=.5; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  ctx.beginPath(); ctx.arc(q[0],q[1],r,0,7);
+  ctx.fillStyle=col; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle="#fff"; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(q[0]-r-6,q[1]); ctx.lineTo(q[0]-r-1,q[1]);
+  ctx.moveTo(q[0]+r+1,q[1]); ctx.lineTo(q[0]+r+6,q[1]);
+  ctx.moveTo(q[0],q[1]-r-6); ctx.lineTo(q[0],q[1]-r-1);
+  ctx.moveTo(q[0],q[1]+r+1); ctx.lineTo(q[0],q[1]+r+6);
+  ctx.strokeStyle=col; ctx.lineWidth=1.4; ctx.stroke();
+}
+
+/* ---- loupe, fixed in a corner so it never covers the target ---- */
+const LOUPE_ZOOM=9, LOUPE_PX=124;
+function showLoupe(fx,fy,screenX){
+  const lp=document.getElementById("loupe"); if(!lp||!M.img) return;
+  const g=lp.getContext("2d"), win=LOUPE_PX/LOUPE_ZOOM;
+  g.imageSmoothingEnabled=false;
+  g.fillStyle="#0E0D0C"; g.fillRect(0,0,LOUPE_PX,LOUPE_PX);
+  g.drawImage(M.img, fx-win/2, fy-win/2, win, win, 0,0,LOUPE_PX,LOUPE_PX);
+  g.strokeStyle="#9FE1CB"; g.lineWidth=1; g.beginPath();
+  g.moveTo(LOUPE_PX/2,0); g.lineTo(LOUPE_PX/2,LOUPE_PX/2-9);
+  g.moveTo(LOUPE_PX/2,LOUPE_PX/2+9); g.lineTo(LOUPE_PX/2,LOUPE_PX);
+  g.moveTo(0,LOUPE_PX/2); g.lineTo(LOUPE_PX/2-9,LOUPE_PX/2);
+  g.moveTo(LOUPE_PX/2+9,LOUPE_PX/2); g.lineTo(LOUPE_PX,LOUPE_PX/2);
+  g.stroke();
+  g.strokeStyle="#EF9F27"; g.beginPath(); g.arc(LOUPE_PX/2,LOUPE_PX/2,3.5,0,7); g.stroke();
+  lp.classList.toggle("left", screenX>viewW()*0.62);
+  lp.classList.add("on");
+}
+function hideLoupe(){ const lp=document.getElementById("loupe"); if(lp) lp.classList.remove("on"); }
+
+/* ---- derived values ---- */
 const subv=function(a,b){return [a[0]-b[0],a[1]-b[1]];};
 function angBetween(u,v){
   const d=(u[0]*v[0]+u[1]*v[1])/((Math.hypot(u[0],u[1])||1)*(Math.hypot(v[0],v[1])||1));
   return Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI;
 }
-const mid2=function(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2];};
 function measured(){
   const P=M.pts;
   if(!(P.hip&&P.fl&&P.fm&&P.tl&&P.tm&&P.ank)) return null;
-  const KF=mid2(P.fl,P.fm);           // distal femoral centre
-  const KT=mid2(P.tl,P.tm);           // proximal tibial centre
-  // LDFA: proximal femoral axis ray against the medial-to-lateral joint ray
+  const KF=mid2(P.fl,P.fm), KT=mid2(P.tl,P.tm);
   const ldfa=angBetween(subv(P.hip,KF), subv(P.fl,P.fm));
-  // MPTA: proximal tibial axis ray against the lateral-to-medial joint ray
   const mpta=angBetween(subv(KT,P.ank), subv(P.tm,P.tl));
   const jl=angBetween(subv(P.fm,P.fl), subv(P.tm,P.tl));
-  /* The femoral anatomic axis is the canal midline. Its angle to the mechanical
-     axis is the offset the intramedullary guide needs. It cannot be inferred
-     from LDFA or MPTA, which describe the joint line rather than the shaft.
-     Both shaft points are optional; without them the population mean stands. */
+  const magn=180-angBetween(subv(P.hip,KF), subv(P.ank,KT));
+  const medial=subv(P.fm,P.fl), HA=subv(P.ank,P.hip), KH=subv(KF,P.hip);
+  const s=((HA[0]*KH[1]-HA[1]*KH[0])*(HA[0]*medial[1]-HA[1]*medial[0]))<0?-1:1;
   let ama=null;
   if(P.sh1&&P.sh2) ama=r1(angBetween(subv(P.hip,KF), subv(P.sh1,P.sh2)));
-  // HKA magnitude at the knee; sign from which side of hip-ankle the knee sits
-  const hkaMag=180-angBetween(subv(P.hip,KF), subv(P.ank,KT));
-  const medial=subv(P.fm,P.fl);
-  const HA=subv(P.ank,P.hip), KH=subv(KF,P.hip);
-  const crossK=HA[0]*KH[1]-HA[1]*KH[0];
-  const crossM=HA[0]*medial[1]-HA[1]*medial[0];
-  const hka=((crossK*crossM)<0?-1:1)*Math.abs(hkaMag);
-  return {ldfa:r1(ldfa), mpta:r1(mpta), hka:r1(hka), jlca:r1(jl), ama:ama,
-          ahka:r1(r1(mpta)-r1(ldfa)), KF:KF, KT:KT};
+  return {ldfa:r1(ldfa), mpta:r1(mpta), hka:r1(s*Math.abs(magn)), jlca:r1(jl),
+          ahka:r1(r1(mpta)-r1(ldfa)), ama:ama,
+          femSpan:Math.hypot(P.fm[0]-P.fl[0],P.fm[1]-P.fl[1]),
+          tibSpan:Math.hypot(P.tm[0]-P.tl[0],P.tm[1]-P.tl[1])};
 }
-function nextStep(){ return LM_STEPS.find(function(s){return !M.pts[s.k];}) || null; }
-function requiredDone(){ return LM_STEPS.filter(function(s){return !s.opt;})
-  .every(function(s){return !!M.pts[s.k];}); }
+/* A point can be set to roughly 1.5 screen pixels. Converted to film pixels and
+   divided by the baseline it sits on, that is the angular uncertainty the
+   placement carries. Short baselines are where it hurts. */
+function angUncertainty(spanFilmPx){
+  return Math.atan((1.5/M.V.scale)/Math.max(spanFilmPx,1))*180/Math.PI;
+}
 
-function drawCanvas(){
-  const cv=document.getElementById("cv"); if(!M.img) return;
-  const ctx=cv.getContext("2d");
-  ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.drawImage(M.img,0,0,cv.width,cv.height);
-  const P=M.pts, s=cv.width/M.img.naturalWidth;
-  function dot(p,fill,r){ ctx.beginPath(); ctx.arc(p[0]*s,p[1]*s,r||6,0,7);
-    ctx.fillStyle=fill; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle="#fff"; ctx.stroke(); }
-  function line(a,b,col,w,dash){ ctx.save(); ctx.setLineDash(dash||[]);
-    ctx.beginPath(); ctx.moveTo(a[0]*s,a[1]*s); ctx.lineTo(b[0]*s,b[1]*s);
-    ctx.strokeStyle=col; ctx.lineWidth=w||2; ctx.stroke(); ctx.restore(); }
-  const KF=(P.fl&&P.fm)?mid2(P.fl,P.fm):null;
-  const KT=(P.tl&&P.tm)?mid2(P.tl,P.tm):null;
-  if(P.hip&&KF) line(P.hip,KF,"#9FE1CB",2.5);
-  if(KT&&P.ank) line(KT,P.ank,"#9FE1CB",2.5);
-  if(P.hip&&P.ank) line(P.hip,P.ank,"#7F77DD",1.5,[6,5]);
-  if(P.fl&&P.fm) line(P.fl,P.fm,"#EF9F27",2.5);
-  if(P.tl&&P.tm) line(P.tl,P.tm,"#EF9F27",2.5);
-  if(KF) dot(KF,"#0F6E56",4.5);
-  if(KT) dot(KT,"#0F6E56",4.5);
-  ["hip","ank"].forEach(function(k){ if(P[k]) dot(P[k],"#4E92B8"); });
-  ["fl","fm","tl","tm"].forEach(function(k){ if(P[k]) dot(P[k],"#EF9F27"); });
-}
-function evtPoint(e){
-  const cv=document.getElementById("cv"), r=cv.getBoundingClientRect();
-  const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
-  const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
-  const s=M.img.naturalWidth/r.width;
-  return {x:cx*s, y:cy*s, sx:cx, sy:cy};
-}
-function showLoupe(pt){
-  const lp=document.getElementById("loupe"), cv=document.getElementById("cv");
-  lp.width=132; lp.height=132; lp.classList.remove("hidden");
-  const g=lp.getContext("2d"); const Z=4;
-  g.fillStyle="#151412"; g.fillRect(0,0,132,132);
-  g.drawImage(M.img, pt.x-16, pt.y-16, 32, 32, 0,0,132,132);
-  g.beginPath(); g.moveTo(66,50); g.lineTo(66,82); g.moveTo(50,66); g.lineTo(82,66);
-  g.strokeStyle="#0F6E56"; g.lineWidth=1.5; g.stroke();
-  const r=cv.getBoundingClientRect();
-  lp.style.left=Math.max(4,Math.min(r.width-136, pt.sx-66))+"px";
-  lp.style.top=Math.max(4, pt.sy-150)+"px";
-}
-function hideLoupe(){ document.getElementById("loupe").classList.add("hidden"); }
-
+/* ---- interface ---- */
 function renderMeas(){
-  const step=nextStep();
-  const sn=document.getElementById("stepnow");
-  if(step){
-    const txt=LANG==="lt"?step.lt:step.en;
-    sn.innerHTML='<b>'+esc((LANG==="lt"?"Taškas ":"Point ")+(Math.min(M.order.length+1,6))+" / 6"+(nextStep()&&nextStep().opt?" \u00b7 "+t("m.optional"):""))+'</b>'+esc(txt[0])+' \u2014 '+esc(txt[1]);
-  } else {
-    sn.innerHTML='<b>'+esc(LANG==="lt"?"Baigta":"Complete")+'</b>'
-      +esc(LANG==="lt"?"Tempkite bet kurį tašką, kad patikslintumėte.":"Drag any point to refine it.");
-  }
-  const lm=document.getElementById("landmarks"); lm.innerHTML="";
-  LM_STEPS.forEach(function(s){
-    const el=document.createElement("span");
-    el.textContent=(LANG==="lt"?s.lt:s.en)[0];
-    if(M.pts[s.k]) el.className="done";
-    lm.appendChild(el);
+  if(!M.img) return;
+  const rw=document.getElementById("mregions"); rw.innerHTML="";
+  M_REGIONS.forEach(function(r,i){
+    const done=r.pts.filter(function(k){return !!M.pts[k];}).length;
+    const b=document.createElement("button");
+    b.className=r.opt?"opt":"";
+    b.innerHTML=esc(t(r.nameKey))+'<span class="cnt">'+done+"/"+r.pts.length+"</span>";
+    b.setAttribute("aria-pressed",String(i===M.region));
+    b.addEventListener("click",function(){ M.region=i; mFrame(); renderMeas(); });
+    rw.appendChild(b);
   });
-  const r=requiredDone() ? measured() : null;
+
+  const k=mPending(), pr=document.getElementById("mprompt");
+  const r=M_REGIONS[M.region];
+  if(k){
+    const lab=(LANG==="lt"?LM_BY_KEY[k].lt:LM_BY_KEY[k].en);
+    pr.innerHTML="<b>"+esc(t(r.nameKey))+" \u00b7 "+(r.pts.indexOf(k)+1)+" / "+r.pts.length
+      +(r.opt?" \u00b7 "+esc(t("m.optional")):"")+"</b>"
+      +esc(lab[0])+(lab[1]?" \u2014 "+esc(lab[1]):"");
+  } else {
+    const next=M_REGIONS.findIndex(function(x){return x.pts.some(function(y){return !M.pts[y];});});
+    pr.innerHTML = next<0 ? "<b>"+esc(t("m.doneAll"))+"</b>"+esc(t("m.refine"))
+      : "<b>"+esc(t(r.nameKey))+" \u2713</b>"+esc(t("m.next",{r:t(M_REGIONS[next].nameKey)}));
+  }
+
+  document.getElementById("nudgelab").textContent = M.sel
+    ? t("m.nudging",{p:(LANG==="lt"?LM_BY_KEY[M.sel].lt:LM_BY_KEY[M.sel].en)[0]})
+    : t("m.nudgeHint");
+  document.getElementById("btn-undo").disabled=M.order.length===0;
+
+  mClamp(); mDraw();
+
+  const res=requiredDone()?measured():null;
   const out=document.getElementById("measout");
-  if(r){
+  if(res){
     out.classList.remove("hidden");
-    const rows=[["LDFA",deg2(r.ldfa)],["MPTA",deg2(r.mpta)],["aHKA",sgn(r.ahka)+"\u00B0"],
-                [t("m.ama"), r.ama===null ? t("m.amaNo") : deg2(r.ama)],
-                [LANG==="lt"?"Išmatuotas HKA":"Measured HKA",sgn(r.hka)+"\u00B0"],
-                [LANG==="lt"?"Sąnario linijų kampas":"Joint line convergence",deg2(180-r.jlca)]];
+    const rows=[["LDFA",deg2(res.ldfa)],["MPTA",deg2(res.mpta)],
+      ["aHKA",sgn(res.ahka)+"\u00B0"],
+      [t("m.ama"), res.ama===null ? t("m.amaNo") : deg2(res.ama)],
+      [LANG==="lt"?"Išmatuotas HKA":"Measured HKA", sgn(res.hka)+"\u00B0"]];
     document.getElementById("mtbl").innerHTML=rows.map(function(x){
       return '<tr><td>'+esc(x[0])+'</td><td class="n">'+esc(x[1])+'</td></tr>';}).join("");
+    const uL=angUncertainty(res.femSpan), uM=angUncertainty(res.tibSpan);
+    const worst=Math.max(uL,uM);
+    const box=document.getElementById("munc");
+    box.className="munc "+(worst<=0.7?"good":"poor");
+    box.textContent = worst<=0.7 ? t("m.uncOk",{v:fmt(r1(worst))})
+                                 : t("m.uncPoor",{v:fmt(r1(worst))});
   } else out.classList.add("hidden");
-  drawCanvas();
 }
 function deg2(v){ return fmt(v)+"\u00B0"; }
+
+/* ---- pointer handling ---- */
+function evtXY(e){
+  const rect=cvEl().getBoundingClientRect();
+  return [e.clientX-rect.left, e.clientY-rect.top];
+}
+function mHit(fx,fy){
+  let best=null, bd=1e9;
+  Object.keys(M.pts).forEach(function(k){
+    const d=Math.hypot(M.pts[k][0]-fx, M.pts[k][1]-fy);
+    if(d<bd){bd=d;best=k;}
+  });
+  return (bd*M.V.scale < 22) ? best : null;
+}
+(function(){
+  const st=stageEl(); if(!st) return;
+  st.addEventListener("pointerdown",function(e){
+    if(!M.img) return;
+    st.setPointerCapture(e.pointerId);
+    M.pointers.set(e.pointerId, evtXY(e));
+    if(M.pointers.size===2){
+      const v=[...M.pointers.values()];
+      M.pinch={d:Math.hypot(v[0][0]-v[1][0],v[0][1]-v[1][1]), scale:M.V.scale,
+               cx:(v[0][0]+v[1][0])/2, cy:(v[0][1]+v[1][1])/2};
+      M.drag=null; M.pan=null; hideLoupe(); return;
+    }
+    const xy=evtXY(e), f=toFilm(xy[0],xy[1]);
+    const hit=mHit(f[0],f[1]);
+    if(hit){ M.drag=hit; M.sel=hit; showLoupe(M.pts[hit][0],M.pts[hit][1],xy[0]); }
+    else {
+      const k=mPending();
+      if(k){ M.pts[k]=[f[0],f[1]];
+             if(M.order.indexOf(k)<0) M.order.push(k);
+             M.drag=k; M.sel=k; showLoupe(f[0],f[1],xy[0]); }
+      else { M.pan=[xy[0],xy[1],M.V.tx,M.V.ty]; }
+    }
+    renderMeas();
+  });
+  st.addEventListener("pointermove",function(e){
+    if(!M.img||!M.pointers.has(e.pointerId)) return;
+    M.pointers.set(e.pointerId, evtXY(e));
+    if(M.pinch && M.pointers.size>=2){
+      const v=[...M.pointers.values()];
+      const d=Math.hypot(v[0][0]-v[1][0],v[0][1]-v[1][1]);
+      const base=viewW()/M.img.naturalWidth;
+      const ns=clamp(M.pinch.scale*(d/M.pinch.d), base*0.5, base*16);
+      const f=toFilm(M.pinch.cx,M.pinch.cy);
+      M.V.scale=ns; M.V.tx=M.pinch.cx-f[0]*ns; M.V.ty=M.pinch.cy-f[1]*ns;
+      renderMeas(); return;
+    }
+    const xy=evtXY(e);
+    if(M.drag){
+      const f=toFilm(xy[0],xy[1]);
+      M.pts[M.drag]=[f[0],f[1]]; showLoupe(f[0],f[1],xy[0]); renderMeas();
+    } else if(M.pan){
+      M.V.tx=M.pan[2]+(xy[0]-M.pan[0]); M.V.ty=M.pan[3]+(xy[1]-M.pan[1]); renderMeas();
+    }
+  });
+  function end(e){
+    M.pointers.delete(e.pointerId);
+    if(M.pointers.size<2) M.pinch=null;
+    M.drag=null; M.pan=null; hideLoupe();
+    if(M.img) renderMeas();
+  }
+  st.addEventListener("pointerup",end);
+  st.addEventListener("pointercancel",end);
+  st.addEventListener("wheel",function(e){
+    if(!M.img) return;
+    e.preventDefault();
+    const xy=evtXY(e), f=toFilm(xy[0],xy[1]);
+    const base=viewW()/M.img.naturalWidth;
+    const ns=clamp(M.V.scale*(e.deltaY<0?1.14:1/1.14), base*0.5, base*16);
+    M.V.scale=ns; M.V.tx=xy[0]-f[0]*ns; M.V.ty=xy[1]-f[1]*ns;
+    renderMeas();
+  },{passive:false});
+})();
+
+document.getElementById("nudge").addEventListener("click",function(e){
+  const b=e.target.closest("button[data-n]"); if(!b||!M.sel||!M.img) return;
+  if(b.dataset.n==="ctr"){
+    mFocus(M.pts[M.sel][0],M.pts[M.sel][1],Math.max(M.V.scale,(viewW()/M.img.naturalWidth)*8));
+    renderMeas(); return;
+  }
+  const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[b.dataset.n];
+  M.pts[M.sel]=[M.pts[M.sel][0]+d[0], M.pts[M.sel][1]+d[1]];
+  showLoupe(M.pts[M.sel][0],M.pts[M.sel][1],toScreen(M.pts[M.sel])[0]);
+  setTimeout(hideLoupe,650);
+  renderMeas();
+});
+window.addEventListener("keydown",function(e){
+  if(!M.sel||!M.img) return;
+  const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];
+  if(!d) return;
+  e.preventDefault();
+  M.pts[M.sel]=[M.pts[M.sel][0]+d[0], M.pts[M.sel][1]+d[1]];
+  renderMeas();
+});
+
+document.getElementById("btn-fit").addEventListener("click",function(){ mFit(); renderMeas(); });
+document.getElementById("btn-zoomto").addEventListener("click",function(){ mFrame(); renderMeas(); });
+document.getElementById("btn-undo").addEventListener("click",function(){
+  const k=M.order.pop(); if(k){ delete M.pts[k]; if(M.sel===k) M.sel=null; }
+  renderMeas();
+});
+document.getElementById("btn-reset").addEventListener("click",function(){
+  M.pts={}; M.order=[]; M.sel=null;
+  S.amaMeasured=false;          // its source has just been discarded
+  renderMeas(); renderPlan();
+});
 
 document.getElementById("img-in").addEventListener("change",function(e){
   const f=e.target.files&&e.target.files[0]; if(!f) return;
@@ -2386,53 +2665,21 @@ document.getElementById("img-in").addEventListener("change",function(e){
   rd.onload=function(){
     const im=new Image();
     im.onload=function(){
-      M.img=im; M.pts={}; M.order=[];
+      M.img=im; M.pts={}; M.order=[]; M.sel=null; M.region=0;
       S.amaMeasured=false;      // a different film; the old angle no longer applies
-      const cv=document.getElementById("cv");
-      const maxW=520; const sc=Math.min(1,maxW/im.naturalWidth);
-      cv.width=Math.round(im.naturalWidth*sc); cv.height=Math.round(im.naturalHeight*sc);
-      document.getElementById("canvaswrap").classList.remove("hidden");
-      ["stepnow","landmarks","measbtns"].forEach(function(id){
-        document.getElementById(id).classList.remove("hidden");});
-      renderMeas();
+      document.getElementById("measbody").classList.remove("hidden");
+      sizeCanvas(); mFit(); mFrame(); renderMeas(); renderPlan();
     };
     im.src=rd.result;
   };
   rd.readAsDataURL(f);
   e.target.value="";
 });
+window.addEventListener("resize",function(){
+  if(!M.img) return;
+  sizeCanvas(); mClamp(); renderMeas();
+});
 
-(function(){
-  const cv=document.getElementById("cv");
-  function nearest(pt){
-    let best=null,bd=1e9;
-    Object.keys(M.pts).forEach(function(k){
-      const d=Math.hypot(M.pts[k][0]-pt.x, M.pts[k][1]-pt.y);
-      if(d<bd){bd=d;best=k;}
-    });
-    const tol=(M.img?M.img.naturalWidth:1000)*0.02;
-    return bd<tol?best:null;
-  }
-  function down(e){ if(!M.img) return; e.preventDefault();
-    const pt=evtPoint(e); const hit=nearest(pt);
-    if(hit){ M.drag=hit; } else { const s=nextStep(); if(s){ M.drag=s.k; } }
-    if(M.drag){ M.pts[M.drag]=[pt.x,pt.y];
-      if(M.order.indexOf(M.drag)<0) M.order.push(M.drag);
-      showLoupe(pt); renderMeas(); } }
-  function move(e){ if(!M.img||!M.drag) return; e.preventDefault();
-    const pt=evtPoint(e); M.pts[M.drag]=[pt.x,pt.y]; showLoupe(pt); renderMeas(); }
-  function up(){ M.drag=null; hideLoupe(); }
-  cv.addEventListener("mousedown",down); cv.addEventListener("touchstart",down,{passive:false});
-  window.addEventListener("mousemove",move); window.addEventListener("touchmove",move,{passive:false});
-  window.addEventListener("mouseup",up); window.addEventListener("touchend",up);
-})();
-
-document.getElementById("btn-undo").addEventListener("click",function(){
-  const k=M.order.pop(); if(k) delete M.pts[k]; renderMeas();});
-document.getElementById("btn-reset").addEventListener("click",function(){
-  M.pts={}; M.order=[];
-  S.amaMeasured=false;          // its source has just been discarded
-  renderMeas(); renderPlan();});
 document.getElementById("btn-apply").addEventListener("click",function(){
   const r=measured(); if(!r) return;
   document.getElementById("i-ldfa").value=r.ldfa.toFixed(1);
