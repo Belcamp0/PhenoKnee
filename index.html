@@ -362,6 +362,13 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .gsteps li.now{color:var(--teal);font-weight:500}
 .gsteps li.done{opacity:.45;text-decoration:line-through}
 .gwhy{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--bone);opacity:.85}
+.flexbox{background:var(--mist);border-radius:12px;padding:12px 14px;margin:2px 0 14px}
+.fxh{margin:0 0 8px;font-size:13px;color:var(--ink);line-height:1.45}
+.fxrow{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-top:.5px solid var(--border)}
+.fxk{font-size:12.5px;color:var(--bone);flex:0 0 96px}
+.fxv{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink);flex:0 0 56px}
+.fxn{font-size:11.5px;color:var(--bone);line-height:1.35}
+.fxf{margin:9px 0 0;font-size:11.5px;color:var(--bone);line-height:1.5}
 .bone{border-radius:10px;padding:11px 13px;margin:10px 0;font-size:12.5px;line-height:1.55}
 .bone.eq{background:var(--within-bg);color:var(--within-tx)}
 .bone.uneq{background:var(--edge-bg);color:var(--edge-tx)}
@@ -541,6 +548,14 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <input id="r-hka" class="range" type="range" min="-20" max="20" step="0.1" value="-7.0" aria-label="HKA">
     <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
   </div>
+  <div class="sldr">
+    <div class="top"><label for="i-flex"><span data-i="c.flex">Fixed flexion deformity</span><span class="hint" data-i="c.flexH">Extension deficit with the knee relaxed</span></label>
+      <input id="i-flex" type="number" step="1" value="0" inputmode="decimal"></div>
+    <input id="r-flex" class="range" type="range" min="-10" max="30" step="1" value="0" aria-label="Fixed flexion deformity">
+    <div class="ticks"><span>−10</span><span data-i="c.hyperext">hyperextension</span><span>0</span><span data-i="c.contract">contracture</span><span>30</span></div>
+  </div>
+  <div id="flexnote"></div>
+
   <div class="sldr">
     <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
       <input id="i-slope" type="number" step="0.1" value="7.0" inputmode="decimal"></div>
@@ -840,6 +855,14 @@ const LT={
  "sh.resections":"Rezekcijos",
  "sh.blade":"Tikslin\u0117s reik\u0161m\u0117s \u2013 kaulo plok\u0161tel\u0117, matuojama kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis. Leistina paklaida \u00b10,5 mm; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
  "sh.film":"I\u0161matuota rentgenograma","sh.valgus":"Valgus",
+ "c.flex":"Fiksuota lenkimo kontrakt\u016Bra","c.flexH":"Tiesimo deficitas atpalaidavus kel\u012F",
+ "c.hyperext":"hiperekstenzija","c.contract":"kontrakt\u016Bra",
+ "fx.head":"{v}\u00b0 kontrakt\u016Bra. Publikuota praktika nesutaria, kiek papildomai imti i\u0161 distalinio \u0161launikaulio, tod\u0117l rodomos abi reik\u0161m\u0117s.",
+ "fx.trad":"Tradicin\u0117","fx.obs":"Robotin\u0117 serija",
+ "fx.jl":"pakelia s\u0105nario linij\u0105 {v} mm",
+ "fx.rate":"Apytiksliai {r}\u00b0 korekcijos vienam nupjautam milimetrui.",
+ "fx.soft":"Didel\u0119 kontrakt\u016Bros dal\u012F sudaro osteofitai ir u\u017Epakalin\u0117 kapsul\u0117, o ne kaulo gylis; s\u0105nario linijos pak\u0117limas siejamas su nestabilumu vidurin\u0117je lenkimo amplitud\u0117je.",
+ "fx.hyper":"{v}\u00b0 hiperekstenzija. Papildoma distalin\u0117 rezekcija ne\u012Fnd\u0117tina; \u012Fprastas sprendimas \u2013 storesnis \u012Fd\u0117klas.",
  "c.hdr":"Planas",
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
@@ -1010,6 +1033,14 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "c.flex":"Fixed flexion deformity","c.flexH":"Extension deficit with the knee relaxed",
+ "c.hyperext":"hyperextension","c.contract":"contracture",
+ "fx.head":"A {v}° contracture. Published practice disagrees on how much extra distal femur to take, so both figures are shown.",
+ "fx.trad":"Traditional","fx.obs":"Robotic series",
+ "fx.jl":"raises the joint line {v} mm",
+ "fx.rate":"Roughly {r}° of correction per millimetre resected.",
+ "fx.soft":"Much of a contracture is osteophyte and posterior capsule rather than bone depth, and joint line elevation is associated with mid-flexion instability.",
+ "fx.hyper":"{v}° of hyperextension. Additional distal resection is not indicated; a thicker insert is the usual lever.",
  "sh.film":"Measured film","sh.valgus":"Valgus",
  "c.hdr":"Plan",
  "c.step4":"4 · Wear","c.result":"Resulting phenotype",
@@ -1209,7 +1240,7 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:false,zoom:1.3,
   /* Femoral anatomic-mechanical angle. Population mean until the canal is
      marked on a film: it depends on shaft bow and femoral length, so it cannot
      be derived from the joint line angles. */
-  ama:6, amaMeasured:false,
+  ama:6, amaMeasured:false, flex:0,
   // Implant overlay is held back until the component outlines are checked
   // against the technique guide. Flip this to true to bring it back.
   implant:false, implantEnabled:false,
@@ -1222,7 +1253,7 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:false,zoom:1.3,
 const V=id=>document.getElementById(id).value;
 const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
 function read(){
-  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));
+  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));S.flex=num(V("i-flex"));
 }
 
 /* Bring the limb inside a boundary by moving components toward neutral.
@@ -2335,15 +2366,15 @@ function renderGuide(c){
 function newCase(){
   S.side="right"; S.size=4; S.strat="ka";
   S.ldfa=90; S.mpta=90; S.hka=0; S.slope=7;
-  S.ama=6; S.amaMeasured=false;
+  S.ama=6; S.amaMeasured=false; S.flex=0;
   S.blade=false;                       // no allowance assumed until chosen
   S.wear={dm:0,dl:0,pm:0,pl:0,tm:0,tl:0};
   document.querySelectorAll("[data-blade]").forEach(function(b){
     b.setAttribute("aria-pressed","false");});
   ["i-caseno","i-surgdate"].forEach(function(id){
     const el=document.getElementById(id); if(el) el.value="";});
-  ["i-ldfa","i-mpta","i-hka","i-slope"].forEach(function(id){
-    const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7}[id];
+  ["i-ldfa","i-mpta","i-hka","i-slope","i-flex"].forEach(function(id){
+    const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7,"i-flex":0}[id];
     document.getElementById(id).value=v.toFixed(1);
     const r=document.getElementById(id.replace("i-","r-"));
     if(r){ r.value=clamp(v,parseFloat(r.min),parseFloat(r.max)); paintTrack(r); }
@@ -2481,6 +2512,7 @@ function buildSheet(){
     ["aHKA", sgn(r1(S.mpta-S.ldfa))+"\u00b0"],
     [t("ax.hka"), c.hka===null?"\u2014":sgn(c.hka)+"\u00b0"],
     [t("c.slope"), fmt(S.slope)+"\u00b0"],
+    [t("c.flex"), (S.flex>0?"+":"")+fmt(S.flex,0)+"\u00b0"],
     [t("c.blade"), fmt(EVO.blade,2)+" mm"]
   ];
   if(g!==null) facts.push([t("gd.lab"), fmt(g)+"\u00b0 "+t("gd.valgus")]);
@@ -2531,6 +2563,51 @@ function buildSheet(){
    +'<p class="foot">'+esc(t("sh.blade",{v:fmt(EVO.blade,2)}))+'<br>'
    + esc(t("cr.by"))+' \u00b7 '+esc(t("cr.dis"))+'</p>';
 }
+/* Fixed flexion deformity.
+
+   The two positions in the literature disagree, and the app shows both rather
+   than picking one:
+
+     traditional protocol   2 to 3 mm of additional distal femoral resection
+     robotic series, 789 knees (2025)   85% of contractures of 10 degrees or
+       more were managed with under 2 mm, the means differing by only 0.3 mm
+       laterally and 0.6 mm medially from knees without contracture
+
+   A separate series puts the effect at about 2 degrees of correction per
+   millimetre of additional resection. Whatever is taken raises the joint line
+   millimetre for millimetre, and joint line elevation is associated with
+   mid-flexion instability — which is why the smaller figure matters.
+
+   Much of a contracture is osteophyte and posterior capsule rather than bone
+   depth, so the app states the range and its cost and leaves the decision. */
+const FLEX_PER_MM=2.0;          // degrees of correction per mm resected
+function flexPlan(){
+  const d=S.flex;
+  if(!Number.isFinite(d) || d<=0) return null;
+  const trad = d>=12 ? 3 : 2;                       // the historical allowance
+  const obs  = Math.min(2, r1(d*0.06));             // what the robotic series shows
+  return {deg:d, trad:trad, obs:obs,
+          tradCorr:r1(trad*FLEX_PER_MM), obsCorr:r1(obs*FLEX_PER_MM)};
+}
+function renderFlex(){
+  const el=document.getElementById("flexnote"); if(!el) return;
+  if(S.flex<0){
+    el.innerHTML='<div class="bone uneq">'+esc(t("fx.hyper",{v:fmt(Math.abs(S.flex),0)}))+'</div>';
+    return;
+  }
+  const f=flexPlan();
+  if(!f){ el.innerHTML=""; return; }
+  el.innerHTML='<div class="flexbox">'
+    + '<p class="fxh">'+esc(t("fx.head",{v:fmt(f.deg,0)}))+'</p>'
+    + '<div class="fxrow"><span class="fxk">'+esc(t("fx.trad"))+'</span>'
+      + '<span class="fxv">'+esc(fmt(f.trad,0))+' mm</span>'
+      + '<span class="fxn">'+esc(t("fx.jl",{v:fmt(f.trad,0)}))+'</span></div>'
+    + '<div class="fxrow"><span class="fxk">'+esc(t("fx.obs"))+'</span>'
+      + '<span class="fxv">'+esc(fmt(f.obs))+' mm</span>'
+      + '<span class="fxn">'+esc(t("fx.jl",{v:fmt(f.obs)}))+'</span></div>'
+    + '<p class="fxf">'+esc(t("fx.rate",{r:fmt(FLEX_PER_MM)}))+' '+esc(t("fx.soft"))+'</p>'
+    + '</div>';
+}
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
   el.innerHTML=[
@@ -2575,7 +2652,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCaseLabel(); renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCaseLabel(); renderFlex(); renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
@@ -3055,6 +3132,7 @@ document.getElementById("btn-apply").addEventListener("click",function(){
 })();
 linkSlider("i-hka","r-hka");
 linkSlider("i-slope","r-slope");
+linkSlider("i-flex","r-flex");
 
 /* ================= published trials =================
    Randomised comparisons of alignment strategy, with the primary joint
@@ -3411,6 +3489,7 @@ function saveCase(){
     side:S.side, implant:"Evolution MP", size:S.size, strategy:S.strat,
     ldfa:S.ldfa, mpta:S.mpta, measuredHka:S.hka, slope:S.slope,
     ahka:r1(S.mpta-S.ldfa), intraArticular:r1(S.hka-r1(S.mpta-S.ldfa)),
+    flexionDeformity:S.flex,
     ama:S.amaMeasured?S.ama:null, amaMeasured:S.amaMeasured,
     cpakType:cpakOf(r1(S.mpta-S.ldfa),r1(S.mpta+S.ldfa)).type,
     wear:JSON.parse(JSON.stringify(S.wear)),
