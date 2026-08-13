@@ -206,6 +206,12 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
   border:.5px solid var(--border);border-radius:8px;background:var(--surface);
   color:var(--teal);cursor:pointer}
 .alt[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
+.caserow{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
+.caselab{font-size:12.5px;color:var(--bone);flex:1 1 auto;line-height:1.4}
+.caselab b{color:var(--ink);font-weight:500}
+.newcase{flex:0 0 auto;font:inherit;font-size:13.5px;min-height:44px;padding:0 16px;
+  border-radius:9px;border:.5px solid var(--teal);background:var(--surface);
+  color:var(--teal);font-weight:500;cursor:pointer}
 .about{background:var(--drape);border-radius:14px;padding:15px 16px;margin:4px 0 20px}
 .about p{margin:0 0 8px;font-size:13px;line-height:1.55;color:#14503F}
 .about p:last-child{margin:0}
@@ -342,6 +348,11 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
 </div>
 
 <section id="s-case" class="on">
+  <div class="caserow">
+    <span class="caselab" id="caselab"></span>
+    <button id="btn-newcase" class="newcase" data-i="c.new">New case</button>
+  </div>
+
   <div class="about">
     <p class="lead" data-i="ab.lead">A calculator for checking that the bony resections you plan and the ones you execute agree.</p>
     <p data-i="ab.body">Enter the leg parameters and it works out the resection depth for each cut under each alignment strategy. Enter what you measured with the caliper in theatre and it shows where the two diverge, and by how much.</p>
@@ -675,10 +686,15 @@ const LT={
  "c.amaLo":"ma\u017Eas","c.amaHi":"didelis",
  "gd.head":"Distalinis \u0161launikaulio kreiptuvas: {v}\u00b0 valgus nuo intramedulinio strypo.",
  "gd.bush":"artimiausia \u012Fvor\u0117 {b}\u00b0","gd.off":"lieka {v}\u00b0 nuokrypio",
+ "gd.needAma":"Kreiptuvo kampo dar n\u0117ra. Jis priklauso nuo kampo tarp \u0161launikaulio diafiz\u0117s ir mechanin\u0117s a\u0161ies, kuris tarp to paties LDFA \u0161launikauli\u0173 skiriasi keliais laipsniais ir i\u0161 s\u0105nario kamp\u0173 neapskai\u010Diuojamas. Pa\u017Eym\u0117kite \u0161launikaulio kanal\u0105 Matavimo skirtuke ir jis \u010Dia atsiras.",
+ "c.savedNext":"Atvejis \u012Fra\u0161ytas. I\u0161valyti j\u012F ir prad\u0117ti kit\u0105?",
+ "c.new":"Naujas atvejis",
+ "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
+ "c.entered":"Reik\u0161m\u0117s \u012Fvestos ranka. Pa\u017Eym\u0117kite rentgenogram\u0105 Matavimo skirtuke, kad b\u016Bt\u0173 apskai\u010Diuotos.",
+ "c.fromFilm":"<b>Kampai i\u0161matuoti i\u0161 rentgenogramos</b>, \u012Fskaitant anatomin\u0117s ir mechanin\u0117s a\u0161ies kamp\u0105.",
  "m.optional":"neprivaloma",
  "m.ama":"Anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas","m.amaNo":"pa\u017Eym\u0117kite kanal\u0105",
  "gd.amaM":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, i\u0161matuotas",
- "gd.amaA":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, populiacijos vidurkis",
  "gd.na":"\u0160ioje strategijoje distalinis \u0161launikaulio pj\u016Bvis nustatomas pagal tarpus, tod\u0117l kreiptuvo kampo i\u0161vesti negalima.",
  "nav.elig":"Tinkamumas",
  "el.case":"\u0160is atvejis","el.crit":"Pagal kiekvieno protokolo skelbtus kriterijus",
@@ -832,10 +848,15 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "c.savedNext":"Case saved. Clear it and start the next one?",
+ "c.new":"New case",
+ "c.newConfirm":"Clear this case? Angles, wear, landmarks, the radiograph and any theatre measurements will be discarded.",
+ "c.entered":"Values entered by hand. Mark a radiograph on the Measure tab to derive them.",
+ "c.fromFilm":"<b>Angles measured from a radiograph</b>, including the anatomic–mechanical angle.",
+ "gd.needAma":"No guide angle yet. It depends on the angle between the femoral shaft and the mechanical axis, which varies by several degrees between femurs with the same LDFA and cannot be derived from the joint line angles. Mark the femoral canal on the Measure tab and it will appear here.",
  "m.optional":"optional",
  "m.ama":"Anatomic–mechanical angle","m.amaNo":"mark the canal to derive",
  "gd.amaM":"anatomic–mechanical angle {v}°, measured from the film",
- "gd.amaA":"anatomic–mechanical angle {v}°, population mean — mark the femoral canal to measure it",
  "gd.postRot":"posterior pair differs by {d} mm, about {a}° of rotation",
  "gd.labCal":"Calipered resections, medial / lateral",
  "gd.mmML":"mm off the condyles",
@@ -2016,6 +2037,16 @@ function renderGuide(c){
     return;
   }
 
+  /* Without a measured anatomic-mechanical angle there is no honest guide
+     figure to give. Deriving one from a population mean would put a number on
+     screen that looks specific to this patient and is not: the angle varies by
+     several degrees between femurs of the same LDFA. Prompt for the
+     measurement instead of inventing the result. */
+  if(!S.amaMeasured){
+    el.innerHTML='<div class="gcall na"><p class="glab">'+esc(t("gd.lab"))+'</p>'
+      + '<p class="gna">'+esc(t("gd.needAma"))+'</p></div>';
+    return;
+  }
   const g=guideValgus(c.p.ldfa);
   const b=nearestBushing(g), off=r1(g-b);
   const exact=Math.abs(off)<0.26;
@@ -2027,8 +2058,43 @@ function renderGuide(c){
     + '<div class="gbush"><span class="bchip'+(exact?" hit":"")+'">'
     + esc(t("gd.bush",{b:fmt(b,0)}))+'</span>'
     + '<span class="bnote">'+esc(exact?t("gd.exact"):t("gd.off",{v:sgn(off)}))+'</span>'
-    + '<span class="bnote">'+esc(t(S.amaMeasured?"gd.amaM":"gd.amaA",{v:fmt(S.ama)}))+'</span></div>'
+    + '<span class="bnote">'+esc(t("gd.amaM",{v:fmt(S.ama)}))+'</span></div>'
     + '</div>';
+}
+/* Everything measured or entered belongs to one patient. Without an explicit
+   reset the previous case's values stay on screen — most dangerously the
+   anatomic-mechanical angle, which would be labelled "measured from the film"
+   while belonging to somebody else's femur. */
+function newCase(){
+  S.side="right"; S.size=4; S.strat="ka";
+  S.ldfa=90; S.mpta=90; S.hka=0; S.slope=7;
+  S.ama=6; S.amaMeasured=false;
+  S.wear={dm:0,dl:0,pm:0,pl:0,tm:0,tl:0};
+  ["i-ldfa","i-mpta","i-hka","i-slope"].forEach(function(id){
+    const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7}[id];
+    document.getElementById(id).value=v.toFixed(1);
+    const r=document.getElementById(id.replace("i-","r-"));
+    if(r){ r.value=clamp(v,parseFloat(r.min),parseFloat(r.max)); paintTrack(r); }
+  });
+  document.querySelectorAll("[data-side]").forEach(function(x){
+    x.setAttribute("aria-pressed",String(x.dataset.side==="right"));});
+  // measurement landmarks and the image itself
+  M.pts={}; M.order=[]; M.img=null;
+  const cw=document.getElementById("canvaswrap");
+  if(cw) cw.classList.add("hidden");
+  ["stepnow","landmarks","measbtns"].forEach(function(id){
+    const el=document.getElementById(id); if(el) el.classList.add("hidden");});
+  const mo=document.getElementById("measout"); if(mo) mo.classList.add("hidden");
+  // theatre entries
+  TH.meas={}; TH.conf={};
+  const tb=document.getElementById("theatbl"); if(tb) tb.innerHTML="";
+  render();
+}
+function renderCaseLabel(){
+  const el=document.getElementById("caselab"); if(!el) return;
+  el.innerHTML = S.amaMeasured
+    ? esc(t("c.fromFilm"))
+    : esc(t("c.entered"));
 }
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
@@ -2074,7 +2140,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCaseLabel(); renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
@@ -2286,6 +2352,7 @@ document.getElementById("img-in").addEventListener("change",function(e){
     const im=new Image();
     im.onload=function(){
       M.img=im; M.pts={}; M.order=[];
+      S.amaMeasured=false;      // a different film; the old angle no longer applies
       const cv=document.getElementById("cv");
       const maxW=520; const sc=Math.min(1,maxW/im.naturalWidth);
       cv.width=Math.round(im.naturalWidth*sc); cv.height=Math.round(im.naturalHeight*sc);
@@ -2328,7 +2395,9 @@ document.getElementById("img-in").addEventListener("change",function(e){
 document.getElementById("btn-undo").addEventListener("click",function(){
   const k=M.order.pop(); if(k) delete M.pts[k]; renderMeas();});
 document.getElementById("btn-reset").addEventListener("click",function(){
-  M.pts={}; M.order=[]; renderMeas();});
+  M.pts={}; M.order=[];
+  S.amaMeasured=false;          // its source has just been discarded
+  renderMeas(); renderPlan();});
 document.getElementById("btn-apply").addEventListener("click",function(){
   const r=measured(); if(!r) return;
   document.getElementById("i-ldfa").value=r.ldfa.toFixed(1);
@@ -2710,6 +2779,7 @@ function saveCase(){
     side:S.side, implant:"Evolution MP", size:S.size, strategy:S.strat,
     ldfa:S.ldfa, mpta:S.mpta, measuredHka:S.hka, slope:S.slope,
     ahka:r1(S.mpta-S.ldfa), intraArticular:r1(S.hka-r1(S.mpta-S.ldfa)),
+    ama:S.amaMeasured?S.ama:null, amaMeasured:S.amaMeasured,
     cpakType:cpakOf(r1(S.mpta-S.ldfa),r1(S.mpta+S.ldfa)).type,
     wear:JSON.parse(JSON.stringify(S.wear)),
     planned:{ldfa:c.p.ldfa,mpta:c.p.mpta,hka:c.hka},
@@ -2719,6 +2789,7 @@ function saveCase(){
   });
   logSave(); renderLog();
   document.querySelector('nav button[data-tab="log"]').click();
+  if(confirm(t("c.savedNext"))) newCase();
 }
 function renderLog(){
   const st=document.getElementById("logstats");
@@ -2884,6 +2955,9 @@ function renderPatient(){
     +'<text x="'+(lat<0?222:98)+'" y="26" text-anchor="middle" fill="#888780" font-size="12" font-family="sans-serif">'+esc(t("pv.straight"))+'</text>';
 }
 
+document.getElementById("btn-newcase").addEventListener("click",function(){
+  if(confirm(t("c.newConfirm"))) newCase();
+});
 document.getElementById("btn-save").addEventListener("click",saveCase);
 document.getElementById("btn-export").addEventListener("click",logExport);
 document.getElementById("btn-import").addEventListener("click",function(){
