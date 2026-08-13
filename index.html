@@ -229,7 +229,7 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .alt[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
 .caserow{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
 .caselab{font-size:12.5px;color:var(--bone);flex:1 1 auto;line-height:1.4}
-.caselab b{color:var(--ink);font-weight:500}
+.caselab.measured{color:var(--teal);font-weight:500}
 .newcase{flex:0 0 auto;font:inherit;font-size:13.5px;min-height:44px;padding:0 16px;
   border-radius:9px;border:.5px solid var(--teal);background:var(--surface);
   color:var(--teal);font-weight:500;cursor:pointer}
@@ -735,7 +735,7 @@ const LT={
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
  "c.entered":"Reik\u0161m\u0117s \u012Fvestos ranka. Pa\u017Eym\u0117kite rentgenogram\u0105 Matavimo skirtuke, kad b\u016Bt\u0173 apskai\u010Diuotos.",
- "c.fromFilm":"<b>Kampai i\u0161matuoti i\u0161 rentgenogramos</b>, \u012Fskaitant anatomin\u0117s ir mechanin\u0117s a\u0161ies kamp\u0105.",
+ "c.fromFilm":"Kampai i\u0161matuoti i\u0161 rentgenogramos, \u012Fskaitant anatomin\u0117s ir mechanin\u0117s a\u0161ies kamp\u0105.",
  "m.rKnee":"Kelias","m.rHip":"Klubas","m.rAnkle":"Kulk\u0161nis","m.rShaft":"Diafiz\u0117",
  "m.fit":"Sutalpinti","m.zoomto":"Priartinti",
  "m.doneAll":"Visi orientyrai pa\u017Eym\u0117ti",
@@ -919,7 +919,7 @@ const EN={
  "c.new":"New case",
  "c.newConfirm":"Clear this case? Angles, wear, landmarks, the radiograph and any theatre measurements will be discarded.",
  "c.entered":"Values entered by hand. Mark a radiograph on the Measure tab to derive them.",
- "c.fromFilm":"<b>Angles measured from a radiograph</b>, including the anatomic–mechanical angle.",
+ "c.fromFilm":"Angles measured from a radiograph, including the anatomic–mechanical angle.",
  "m.optional":"optional",
  "m.ama":"Anatomic–mechanical angle","m.amaNo":"mark the canal to derive",
  "gd.amaM":"anatomic–mechanical angle {v}°, measured from the film",
@@ -2177,9 +2177,8 @@ function newCase(){
 }
 function renderCaseLabel(){
   const el=document.getElementById("caselab"); if(!el) return;
-  el.innerHTML = S.amaMeasured
-    ? esc(t("c.fromFilm"))
-    : esc(t("c.entered"));
+  el.textContent = t(S.amaMeasured ? "c.fromFilm" : "c.entered");
+  el.className = "caselab" + (S.amaMeasured ? " measured" : "");
 }
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
