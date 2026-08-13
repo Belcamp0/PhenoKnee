@@ -238,6 +238,34 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .about p:last-child{margin:0}
 .about .lead{font-size:15px;font-weight:500;line-height:1.4;color:var(--teal)}
 .about .small{font-size:12px;color:#4A7566}
+/* The sheet is built in the page but only ever painted by the printer, so a
+   surgeon gets a page that matches the plan exactly rather than a screenshot. */
+.sheet{display:none}
+@media print{
+  body{background:#fff}
+  .app>.topbar, .app>main, nav, .cred, #btn-print{display:none !important}
+  .sheet{display:block;padding:0;color:#000;font-size:11pt}
+  .sheet h1{font-size:15pt;margin:0 0 2mm;font-weight:600}
+  .sheet .meta{font-size:9.5pt;color:#333;margin:0 0 5mm;line-height:1.45}
+  .sheet table{width:100%;border-collapse:collapse;margin-bottom:5mm}
+  .sheet th{font-size:8.5pt;font-weight:600;text-align:left;text-transform:uppercase;
+    letter-spacing:.04em;border-bottom:1pt solid #000;padding:1.5mm 1mm}
+  .sheet th.n,.sheet td.n{text-align:right}
+  .sheet td{padding:2.2mm 1mm;border-bottom:0.4pt solid #bbb;font-size:11pt}
+  .sheet td.tgt{font-family:monospace;font-weight:600}
+  .sheet td.box{border-bottom:0.4pt solid #bbb}
+  .sheet .blank{display:inline-block;width:22mm;border-bottom:0.7pt solid #000;height:5mm}
+  .sheet h2{font-size:9.5pt;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    margin:0 0 2mm;border-bottom:1pt solid #000;padding-bottom:1mm}
+  .sheet .checks li{font-size:10pt;margin-bottom:2.5mm;list-style:none}
+  .sheet .checks{padding:0;margin:0 0 5mm}
+  .sheet .checks .bx{display:inline-block;width:4mm;height:4mm;border:0.8pt solid #000;
+    margin-right:2.5mm;vertical-align:-0.5mm}
+  .sheet .foot{font-size:8pt;color:#444;border-top:0.4pt solid #999;padding-top:2mm;line-height:1.5}
+  .sheet .cols{display:flex;gap:8mm}
+  .sheet .cols>div{flex:1}
+  @page{margin:14mm}
+}
 .cred{padding:20px 16px calc(24px + env(safe-area-inset-bottom));
   border-top:.5px solid var(--border);background:var(--mist)}
 .cred .who{margin:0;font-size:12px;color:var(--ink)}
@@ -531,6 +559,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <span><i class="sw" style="background:#888780"></i><span data-i="lg.mech">Mechanical axis</span></span>
   </div>
   <div id="guiderow"></div>
+  <button class="ghost" id="btn-print" data-i="p.print">Print theatre sheet</button>
 
   <h2 data-i="p.tbl">Resection depths</h2>
   <table><thead><tr>
@@ -636,6 +665,8 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <p class="pbody" data-i="pv.b3">People often worry the leg will still look bowed afterwards. In one study of knees replaced this way, most patients described their leg as bowed beforehand, and every one of them described it as straight after surgery.</p>
 </section>
 
+  <div id="sheet" class="sheet" aria-hidden="true"></div>
+
   <footer class="cred">
     <p class="who" data-i="cr.by">Created by Saulius Brazauskas, 2026</p>
     <p class="dis2" data-i="cr.dis">A geometric calculator. It does not imply or replace medical judgement.</p>
@@ -732,6 +763,12 @@ const LT={
  "gd.sCanal":"Pažymėkite šlaunikaulio kanalą – proksimaliai ir distaliai",
  "gd.why":"Kampas tarp šlaunikaulio diafizės ir mechaninės ašies tarp to paties LDFA šlaunikaulių skiriasi keliais laipsniais, todėl jo negalima nei numatyti, nei apskaičiuoti iš sąnario kampų.",
  "c.savedNext":"Atvejis \u012Fra\u0161ytas. I\u0161valyti j\u012F ir prad\u0117ti kit\u0105?",
+ "p.print":"Spausdinti operacin\u0117s lap\u0105",
+ "sh.title":"Rezekcij\u0173 patikros lapas",
+ "sh.size":"dydis {v}",
+ "sh.date":"Planuota {d}",
+ "sh.resections":"Rezekcijos",
+ "sh.blade":"Tikslin\u0117s reik\u0161m\u0117s \u2013 kaulo plok\u0161tel\u0117, matuojama kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis. Leistina paklaida \u00b10,5 mm; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
  "c.entered":"Reik\u0161m\u0117s \u012Fvestos ranka. Pa\u017Eym\u0117kite rentgenogram\u0105 Matavimo skirtuke, kad b\u016Bt\u0173 apskai\u010Diuotos.",
@@ -901,6 +938,12 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "p.print":"Print theatre sheet",
+ "sh.title":"Resection verification sheet",
+ "sh.size":"size {v}",
+ "sh.date":"Planned {d}",
+ "sh.resections":"Resections",
+ "sh.blade":"Target figures are the bone slab to caliper — guide depth less the {v} mm blade. Tolerance ±0.5 mm; medial and lateral tibial thickness at the spine base should agree within 0.5 mm of the planned tilt.",
  "m.rKnee":"Knee","m.rHip":"Hip","m.rAnkle":"Ankle","m.rShaft":"Shaft",
  "m.fit":"Fit","m.zoomto":"Zoom in",
  "m.doneAll":"All landmarks placed",
@@ -1501,46 +1544,95 @@ function cartilage(tf,key,ys,dir,wear){
    cortex near +28, posterior condyle near -32, so the condyle overhangs the
    posterior shaft cortex by roughly 12 mm. The posterior condyle approximates
    a circle of ~20 mm radius; the distal and trochlear surfaces flatten out. */
-/* Femoral sagittal profile, generated as a J-curve: the articular surface is a
-   tight arc posteriorly and distally that flares anteriorly into the trochlea
-   and anterior cortex. Anteroposterior span about 58 mm. */
-const FEM_O=[-6,-22];
-function femR(phi){
-  const t=[[-118,25.5],[-90,25],[-45,23.5],[0,22],[25,22.8],[50,26],[72,30.5],[95,36]];
-  for(let i=0;i<t.length-1;i++){ if(phi<=t[i+1][0]){
-    const a=t[i],b=t[i+1],f=(phi-a[0])/(b[0]-a[0]); return a[1]+(b[1]-a[1])*f; } }
-  return t[t.length-1][1];
+/* ============ femoral sagittal geometry ============
+   Built from published morphometry rather than by eye.
+
+   Radii of curvature, sagittal plane (mm):
+     medial condyle   anterior 20.8   distal 31.4   posterior 19.7
+     lateral condyle  anterior 21.5   distal 64.4   posterior 19.1
+   The lateral condyle is markedly flatter distally, which is why the two
+   compartments are drawn differently rather than mirrored.
+
+   Anteroposterior length: medial condyle 55.6 mm, lateral 57.9 mm.
+
+   Posterior Condylar Offset Ratio 0.44 (SD 0.02): the posterior condyle
+   projects behind the posterior shaft cortex by 0.44 of the distance from the
+   anterior cortex to the back of the condyle. That places the shaft well
+   ANTERIOR of the condyles — the previous drawing had it almost centred over
+   them, giving a ratio near 0.20, and that was the main silhouette error. */
+const PCOR=0.44;
+function femGeom(medial){
+  const rPost = medial ? 19.7 : 19.1;
+  const rDist = medial ? 31.4 : 64.4;
+  const rAnt  = medial ? 20.8 : 21.5;
+  const ap    = medial ? 55.6 : 57.9;
+  const postX = -ap*0.52;                       // posterior-most point
+  const antCortex = postX + ap;
+  const postCortex = postX + PCOR*ap;
+  // three mutually tangent arcs; the distal arc carries the distal-most point
+  const Cd=[0,-rDist];
+  const solve=function(r,targetX,sign){
+    const C=[targetX - sign*r, 0];
+    const k=rDist-r, dx=C[0]-Cd[0];
+    C[1]=Cd[1]+Math.sqrt(Math.max(k*k-dx*dx,0));
+    const u=[(C[0]-Cd[0])/k,(C[1]-Cd[1])/k];
+    return {C:C, r:r, tan:[Cd[0]+rDist*u[0], Cd[1]+rDist*u[1]], u:u};
+  };
+  const post=solve(rPost, postX, -1);
+  const ant =solve(rAnt,  antCortex, 1);
+  return {rPost:rPost,rDist:rDist,rAnt:rAnt,ap:ap,postX:postX,
+          antCortex:antCortex,postCortex:postCortex,Cd:Cd,post:post,ant:ant};
 }
-function femPt(phi){ const r=femR(phi), d=phi*Math.PI/180;
-  return [FEM_O[0]+r*Math.sin(d), FEM_O[1]+r*Math.cos(d)]; }
-function femProfile(from,to,n){
-  const out=[]; for(let i=0;i<=n;i++) out.push(femPt(from+(to-from)*i/n)); return out;
+function arcPts(C,r,a0,a1,n){
+  const out=[];
+  for(let i=0;i<=n;i++){
+    const a=a0+(a1-a0)*i/n;
+    out.push([C[0]+r*Math.sin(a), C[1]+r*Math.cos(a)]);
+  }
+  return out;
 }
-// Articular surface, anterior trochlea round to posterior condyle.
-const AP_FEM=femProfile(72,-112,22).map(function(q){return q;});
-// Full bone outline: articular arc plus cortices and shaft.
-function apFemBone(){
-  const arc=femProfile(88,-116,26);
-  const segs=[["M",[13,-90]]];
-  segs.push(["C",[14.6,-74],[17.4,-60],[21,-49]]);      // anterior cortex
-  segs.push(["C",[24,-40],[26.6,-32],[arc[0][0],arc[0][1]]]);
-  for(let i=1;i<arc.length;i++) segs.push(["L",arc[i]]);
-  segs.push(["C",[-30.6,-40],[-27.6,-46],[-25,-52]]);   // posterior condyle to cortex
-  segs.push(["C",[-22.6,-62],[-21.4,-74],[-21,-90]]);
+/* Articular profile, anterior trochlea round to the posterior condyle. */
+function femProfile(medial){
+  const g=femGeom(medial);
+  const angOf=function(C,r,p){ return Math.atan2(p[0]-C[0], p[1]-C[1]); };
+  const aTanA=angOf(g.Cd,g.rDist,g.ant.tan);
+  const aTanP=angOf(g.Cd,g.rDist,g.post.tan);
+  const antEnd=angOf(g.ant.C,g.ant.r,[g.antCortex,g.ant.C[1]]);
+  const postEnd=angOf(g.post.C,g.post.r,[g.postX,g.post.C[1]]);
+  return arcPts(g.ant.C,g.ant.r, antEnd, angOf(g.ant.C,g.ant.r,g.ant.tan), 6)
+    .concat(arcPts(g.Cd,g.rDist, aTanA, aTanP, 16))
+    .concat(arcPts(g.post.C,g.post.r, angOf(g.post.C,g.post.r,g.post.tan), postEnd-0.35, 8));
+}
+/* Full outline: articular arcs, then the posterior cortex rising from behind
+   the condyle and the anterior cortex closing the shaft. */
+function apFemBone(medial){
+  const g=femGeom(medial);
+  const prof=femProfile(medial);
+  const segs=[["M",[g.antCortex-2,-88]]];
+  segs.push(["C",[g.antCortex-1,-70],[g.antCortex,-52],[g.antCortex,-34]]);
+  segs.push(["C",[g.antCortex-0.5,-28],[prof[0][0]+1.5,prof[0][1]-6],[prof[0][0],prof[0][1]]]);
+  for(let i=1;i<prof.length;i++) segs.push(["L",prof[i]]);
+  const back=prof[prof.length-1];
+  segs.push(["C",[back[0]+3,back[1]-8],[g.postCortex-4,-44],[g.postCortex,-54]]);
+  segs.push(["C",[g.postCortex+0.6,-66],[g.postCortex+1.4,-78],[g.postCortex+1.8,-88]]);
   segs.push(["Z"]);
   return segs;
 }
-const AP_FEM_BONE=apFemBone();
-/* Blumensaat's line: roof of the intercondylar notch, posteroinferior to
-   anterosuperior. */
-const AP_BLUM=[["M",[-19,-29]],["L",[8,-40]]];
-/* Patella, anterior to the trochlea, apex distal. */
-const AP_PATELLA=[
- ["M",[31,-42]],["C",[35,-48],[43,-50],[48,-45]],
- ["C",[51.6,-40],[51,-31],[48.6,-23]],
- ["C",[46.6,-16],[43,-11],[39.6,-9.6]],
- ["C",[36,-12],[32.6,-17],[31.4,-25]],
- ["C",[30.6,-31],[30,-38],[31,-42]],["Z"]];
+/* Blumensaat's line: the notch roof, posteroinferior to anterosuperior. */
+function apBlum(medial){
+  const g=femGeom(medial);
+  return [["M",[g.postCortex-6,-26]],["L",[g.postCortex+22,-38]]];
+}
+/* Patella, anterior to the trochlea with its apex distal. */
+function apPatella(medial){
+  const g=femGeom(medial), x=g.antCortex+4;
+  return [
+   ["M",[x+1,-44]],["C",[x+5,-50],[x+13,-52],[x+18,-47]],
+   ["C",[x+21.6,-42],[x+21,-33],[x+18.6,-25]],
+   ["C",[x+16.6,-18],[x+13,-13],[x+9.6,-11.6]],
+   ["C",[x+6,-14],[x+2.6,-19],[x+1.4,-27]],
+   ["C",[x+0.6,-33],[x,-40],[x+1,-44]],["Z"]];
+}
 
 /* Tibial sagittal profile. The medial plateau is concave and has a greater
    anteroposterior dimension; the lateral plateau is convex and shorter.
@@ -1631,7 +1723,10 @@ function drawFigAP(c){
   // Guide default is 3 degrees; kinematic technique sets the anatomic slope.
   const planSlope = (S.strat==="ma"||S.strat==="ama") ? 3 : S.slope;
   const tfF=tfm(mid,fY,0,SC,AFLIP), tfT=tfm(mid,tY,0,SC,AFLIP);
-  const POST_MOST=-31.0;
+  // the profile now differs between compartments, so it is derived per draw
+  const FG=femGeom(med);
+  const FPROF=femProfile(med);
+  const POST_MOST=FG.postX;
   // Tibial profile is needed by the extensor mechanism as well as the cuts,
   // so it is derived once here rather than part-way down.
   const tibPts=apTibProfile(med,S.slope);
@@ -1642,9 +1737,9 @@ function drawFigAP(c){
   // tibia
   g+='<path d="'+path(tfT,apTibBone(med,S.slope))+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
   // femur
-  g+='<path d="'+path(tfF,AP_FEM_BONE)+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
-  g+=blob(tfF,[-8,-19],21,18,"url(#condM)",0.55);
-  g+='<path d="'+path(tfF,AP_BLUM)+'" fill="none" stroke="#8C8878" stroke-width="1.2" stroke-linecap="round"/>';
+  g+='<path d="'+path(tfF,apFemBone(med))+'" fill="url(#shaft)" stroke="#7E7A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  g+=blob(tfF,[FG.postX*0.42,-FG.rDist*0.4],FG.ap*0.32,FG.rDist*0.4,"url(#condM)",0.5);
+  g+='<path d="'+path(tfF,apBlum(med))+'" fill="none" stroke="#8C8878" stroke-width="1.2" stroke-linecap="round"/>';
   // patella, anterior to the trochlea
   /* On a true lateral both condyles superimpose with a slight offset — the
      double contour is what makes a lateral film read as a lateral. */
@@ -1657,7 +1752,7 @@ function drawFigAP(c){
     }
     g+='<path d="'+dc+'" fill="none" stroke="#8C8878" stroke-width="0.9" stroke-opacity="0.7"/>';
   }
-  g+='<path d="'+path(tfF,AP_PATELLA)+'" fill="url(#shaft)" fill-opacity="0.9" stroke="#8C8878" stroke-width="1.2" stroke-linejoin="round"/>';
+  g+='<path d="'+path(tfF,apPatella(med))+'" fill="url(#shaft)" fill-opacity="0.9" stroke="#8C8878" stroke-width="1.2" stroke-linejoin="round"/>';
   /* Extensor mechanism: quadriceps tendon above, patellar tendon running to
      the tibial tuberosity below. Ties the patella to the tuberosity and makes
      the anterior side unmistakable. */
@@ -1674,32 +1769,33 @@ function drawFigAP(c){
   }
 
   // cartilage: distal wear over the weight-bearing zone, posterior wear behind
-  const antHalf=AP_FEM.slice(0,12), postHalf=AP_FEM.slice(11);
+  const half=Math.round(FPROF.length*0.55);
+  const antHalf=FPROF.slice(0,half), postHalf=FPROF.slice(half-1);
   g+=cartilageN(tfF,antHalf,wearD);
   g+=cartilageN(tfF,postHalf,wearP);
   g+=cartilageN(tfT,tibPts.slice().reverse(),wearT,"tibia");
 
   // ---- femoral cuts: anterior, anterior chamfer, distal, posterior chamfer, posterior
   const dy=-distalD, px=POST_MOST+postD, k=9;
-  const box=[[27.6,-46],[27.6,-18],[17,dy],[px+k,dy],[px,dy-k],[px,-38]];
+  const box=[[FG.antCortex,-48],[FG.antCortex,-18],[17,dy],[px+k,dy],[px,dy-k],[px,-40]];
   const profile=femProfile(78,-112,20).concat([[-31,-38]]);
   g+='<path d="'+poly(tfF,profile.concat(box.slice().reverse()),true)
     +'" fill="url(#cutface)" fill-opacity="0.5"/>';
   if(femDerived){
-    g+=seg(tfF,[27.6,-46],[27.6,-17],"#0F6E56",2.6);
-    g+=seg(tfF,[27.6,-17],[17.2,dy],"#0F6E56",2.6);
+    g+=seg(tfF,[FG.antCortex,-48],[FG.antCortex,-17],"#0F6E56",2.6);
+    g+=seg(tfF,[FG.antCortex,-17],[17.2,dy],"#0F6E56",2.6);
     g+=cutPlane(tfF,[17,dy],[px+k,dy],-1);
     g+=seg(tfF,[px+k,dy],[px,dy-k],"#0F6E56",2.6);
-    g+=seg(tfF,[px,dy-k],[px,-38],"#0F6E56",2.6);
+    g+=seg(tfF,[px,dy-k],[px,-40],"#0F6E56",2.6);
     g+=tag(tfF,[4,dy-4],fmt(shown(distalD)),"middle");
   } else {
     // No derivable distal cut under inverse kinematic alignment: shown dashed
     // rather than substituting a depth the plan does not contain.
-    g+=seg(tfF,[27.6,-46],[27.6,-17],"#A8A497",2,"5 4");
-    g+=seg(tfF,[27.6,-17],[17.2,dy],"#A8A497",2,"5 4");
+    g+=seg(tfF,[FG.antCortex,-48],[FG.antCortex,-17],"#A8A497",2,"5 4");
+    g+=seg(tfF,[FG.antCortex,-17],[17.2,dy],"#A8A497",2,"5 4");
     g+=seg(tfF,[17,dy],[px+k,dy],"#A8A497",2,"5 4");
     g+=seg(tfF,[px+k,dy],[px,dy-k],"#A8A497",2,"5 4");
-    g+=seg(tfF,[px,dy-k],[px,-38],"#A8A497",2,"5 4");
+    g+=seg(tfF,[px,dy-k],[px,-40],"#A8A497",2,"5 4");
     const q=tfF([4,dy-5]);
     g+='<text x="'+q[0].toFixed(1)+'" y="'+q[1].toFixed(1)+'" text-anchor="middle" font-size="10.5"'
       +' fill="#8A867A" font-family="sans-serif">'+esc(t("v.gapset"))+'</text>';
@@ -2179,6 +2275,51 @@ function renderCaseLabel(){
   const el=document.getElementById("caselab"); if(!el) return;
   el.textContent = t(S.amaMeasured ? "c.fromFilm" : "c.entered");
   el.className = "caselab" + (S.amaMeasured ? " measured" : "");
+}
+/* The theatre sheet. The verification worksheet is what the technique actually
+   requires be recorded, and nobody holds a phone at the table — so the targets
+   are printed and the measured column is left blank to be written in.
+   Carries no patient identifier, by design. */
+function buildSheet(){
+  const c=cuts(S.strat);
+  const el=document.getElementById("sheet"); if(!el) return;
+  const sh=function(v){return v===null?"\u2014":fmt(S.blade?r1(v-EVO.blade):v);};
+  const rows=[
+    [t("f.dist")+" \u00b7 "+t("su.med"), c.distal?sh(c.distal.med):null],
+    [t("f.dist")+" \u00b7 "+t("su.lat"), c.distal?sh(c.distal.lat):null],
+    [t("f.post")+" \u00b7 "+t("su.med"), sh(c.posterior.med)],
+    [t("f.post")+" \u00b7 "+t("su.lat"), sh(c.posterior.lat)],
+    [t("f.tib")+" \u00b7 "+t("su.med"), sh(c.spine.med)],
+    [t("f.tib")+" \u00b7 "+t("su.lat"), sh(c.spine.lat)]
+  ];
+  const checks=[t("th.q1"),t("th.q2"),t("th.q3")];
+  const g=S.amaMeasured?guideValgus(c.p.ldfa):null;
+  el.innerHTML=
+    '<h1>'+esc(t("sh.title"))+'</h1>'
+   +'<p class="meta">'
+     + esc(t("s."+S.strat+"F"))+' \u00b7 '+esc(t(S.side==="right"?"c.right":"c.left"))
+     + ' \u00b7 Evolution MP '+esc(t("sh.size",{v:S.size}))
+     + '<br>LDFA '+esc(fmt(S.ldfa))+'\u00b0 \u00b7 MPTA '+esc(fmt(S.mpta))+'\u00b0'
+     + ' \u00b7 '+esc(t("ax.hka"))+' '+esc(c.hka===null?"\u2014":sgn(c.hka))+'\u00b0'
+     + ' \u00b7 '+esc(t("c.blade"))+' '+esc(fmt(EVO.blade,2))+' mm'
+     + (g!==null ? '<br>'+esc(t("gd.lab"))+': '+esc(fmt(g))+'\u00b0 '+esc(t("gd.valgus")) : '')
+     + '<br>'+esc(t("sh.date",{d:new Date().toLocaleDateString(LANG==="lt"?"lt-LT":"en-GB")}))
+   +'</p>'
+   +'<h2>'+esc(t("sh.resections"))+'</h2>'
+   +'<table><thead><tr><th>'+esc(t("th.cut"))+'</th><th class="n">'+esc(t("th.tgt"))
+     +'</th><th class="n">'+esc(t("th.meas"))+'</th><th class="n">'+esc(t("th.delta"))+'</th></tr></thead><tbody>'
+   + rows.map(function(r){
+       return '<tr><td>'+esc(r[0])+'</td><td class="n tgt">'+esc(r[1]===null?"\u2014":r[1])
+            +'</td><td class="n box"><span class="blank"></span></td>'
+            +'<td class="n box"><span class="blank"></span></td></tr>';
+     }).join("")
+   +'</tbody></table>'
+   +'<div class="cols"><div>'
+   +'<h2>'+esc(t("th.checks"))+'</h2><ul class="checks">'
+   + checks.map(function(q){return '<li><span class="bx"></span>'+esc(q)+'</li>';}).join("")
+   +'</ul></div></div>'
+   +'<p class="foot">'+esc(t("sh.blade",{v:fmt(EVO.blade,2)}))+'<br>'
+   + esc(t("cr.by"))+' \u00b7 '+esc(t("cr.dis"))+'</p>';
 }
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
@@ -3236,6 +3377,10 @@ function renderPatient(){
     +'<text x="'+(lat<0?222:98)+'" y="26" text-anchor="middle" fill="#888780" font-size="12" font-family="sans-serif">'+esc(t("pv.straight"))+'</text>';
 }
 
+document.getElementById("btn-print").addEventListener("click",function(){
+  buildSheet();
+  window.print();
+});
 document.getElementById("btn-newcase").addEventListener("click",function(){
   if(confirm(t("c.newConfirm"))) newCase();
 });
