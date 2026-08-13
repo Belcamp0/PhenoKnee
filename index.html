@@ -379,12 +379,6 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
   </div>
   <div class="sldr">
-    <div class="top"><label for="i-ama"><span data-i="c.ama">Femoral anatomic–mechanical angle</span><span class="hint" data-i="c.amaH">Between the shaft and the mechanical axis; sets the guide</span></label>
-      <input id="i-ama" type="number" step="0.1" value="6.0" inputmode="decimal"></div>
-    <input id="r-ama" class="range" type="range" min="3" max="9" step="0.1" value="6.0" aria-label="AMA">
-    <div class="ticks"><span>3</span><span data-i="c.amaLo">small</span><span>6</span><span data-i="c.amaHi">large</span><span>9</span></div>
-  </div>
-  <div class="sldr">
     <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
       <input id="i-slope" type="number" step="0.1" value="7.0" inputmode="decimal"></div>
     <input id="r-slope" class="range" type="range" min="0" max="16" step="0.1" value="7.0" aria-label="Tibial slope">
@@ -681,7 +675,10 @@ const LT={
  "c.amaLo":"ma\u017Eas","c.amaHi":"didelis",
  "gd.head":"Distalinis \u0161launikaulio kreiptuvas: {v}\u00b0 valgus nuo intramedulinio strypo.",
  "gd.bush":"artimiausia \u012Fvor\u0117 {b}\u00b0","gd.off":"lieka {v}\u00b0 nuokrypio",
- "gd.ama":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0",
+ "m.optional":"neprivaloma",
+ "m.ama":"Anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas","m.amaNo":"pa\u017Eym\u0117kite kanal\u0105",
+ "gd.amaM":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, i\u0161matuotas",
+ "gd.amaA":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, populiacijos vidurkis",
  "gd.na":"\u0160ioje strategijoje distalinis \u0161launikaulio pj\u016Bvis nustatomas pagal tarpus, tod\u0117l kreiptuvo kampo i\u0161vesti negalima.",
  "nav.elig":"Tinkamumas",
  "el.case":"\u0160is atvejis","el.crit":"Pagal kiekvieno protokolo skelbtus kriterijus",
@@ -835,6 +832,10 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "m.optional":"optional",
+ "m.ama":"Anatomic–mechanical angle","m.amaNo":"mark the canal to derive",
+ "gd.amaM":"anatomic–mechanical angle {v}°, measured from the film",
+ "gd.amaA":"anatomic–mechanical angle {v}°, population mean — mark the femoral canal to measure it",
  "gd.postRot":"posterior pair differs by {d} mm, about {a}° of rotation",
  "gd.labCal":"Calipered resections, medial / lateral",
  "gd.mmML":"mm off the condyles",
@@ -994,7 +995,11 @@ const r1=v=>Math.round(v*10)/10, clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const TAN=d=>Math.tan(d*Math.PI/180);
 
-const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,ama:6,
+const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,
+  /* Femoral anatomic-mechanical angle. Population mean until the canal is
+     marked on a film: it depends on shaft bow and femoral length, so it cannot
+     be derived from the joint line angles. */
+  ama:6, amaMeasured:false,
   // Implant overlay is held back until the component outlines are checked
   // against the technique guide. Flip this to true to bring it back.
   implant:false, implantEnabled:false,
@@ -1006,7 +1011,7 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:true,zoom:1.3,ama:6,
 const V=id=>document.getElementById(id).value;
 const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
 function read(){
-  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));S.ama=num(V("i-ama"));
+  S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));
 }
 
 /* Bring the limb inside a boundary by moving components toward neutral.
@@ -2022,7 +2027,7 @@ function renderGuide(c){
     + '<div class="gbush"><span class="bchip'+(exact?" hit":"")+'">'
     + esc(t("gd.bush",{b:fmt(b,0)}))+'</span>'
     + '<span class="bnote">'+esc(exact?t("gd.exact"):t("gd.off",{v:sgn(off)}))+'</span>'
-    + '<span class="bnote">'+esc(t("gd.ama",{v:fmt(S.ama)}))+'</span></div>'
+    + '<span class="bnote">'+esc(t(S.amaMeasured?"gd.amaM":"gd.amaA",{v:fmt(S.ama)}))+'</span></div>'
     + '</div>';
 }
 function renderMethod(){
@@ -2152,7 +2157,13 @@ const LM_STEPS=[
  {k:"tm",  en:["Medial tibial plateau","Medial edge of the tibial joint surface"],
            lt:["Medialinis blauzdikaulio plokščiakalnis","Medialinis sąnario paviršiaus kraštas"]},
  {k:"ank", en:["Centre of the ankle","Middle of the tibial plafond"],
-           lt:["Kulkšnies centras","Blauzdikaulio sąnarinio paviršiaus vidurys"]}
+           lt:["Kulkšnies centras","Blauzdikaulio sąnarinio paviršiaus vidurys"]},
+ {k:"sh1", opt:true,
+       en:["Femoral canal, proximal","Optional — marking the canal derives the guide angle"],
+       lt:["Šlaunikaulio kanalas, proksimaliai","Neprivaloma – pažymėjus kanalą apskaičiuojamas kreiptuvo kampas"]},
+ {k:"sh2", opt:true,
+       en:["Femoral canal, distal","Centre of the canal just above the flare"],
+       lt:["Šlaunikaulio kanalas, distaliai","Kanalo vidurys ties diafizės praplatėjimu"]}
 ];
 const M={img:null, pts:{}, order:[], drag:null, scale:1};
 
@@ -2172,6 +2183,12 @@ function measured(){
   // MPTA: proximal tibial axis ray against the lateral-to-medial joint ray
   const mpta=angBetween(subv(KT,P.ank), subv(P.tm,P.tl));
   const jl=angBetween(subv(P.fm,P.fl), subv(P.tm,P.tl));
+  /* The femoral anatomic axis is the canal midline. Its angle to the mechanical
+     axis is the offset the intramedullary guide needs. It cannot be inferred
+     from LDFA or MPTA, which describe the joint line rather than the shaft.
+     Both shaft points are optional; without them the population mean stands. */
+  let ama=null;
+  if(P.sh1&&P.sh2) ama=r1(angBetween(subv(P.hip,KF), subv(P.sh1,P.sh2)));
   // HKA magnitude at the knee; sign from which side of hip-ankle the knee sits
   const hkaMag=180-angBetween(subv(P.hip,KF), subv(P.ank,KT));
   const medial=subv(P.fm,P.fl);
@@ -2179,10 +2196,12 @@ function measured(){
   const crossK=HA[0]*KH[1]-HA[1]*KH[0];
   const crossM=HA[0]*medial[1]-HA[1]*medial[0];
   const hka=((crossK*crossM)<0?-1:1)*Math.abs(hkaMag);
-  return {ldfa:r1(ldfa), mpta:r1(mpta), hka:r1(hka), jlca:r1(jl),
+  return {ldfa:r1(ldfa), mpta:r1(mpta), hka:r1(hka), jlca:r1(jl), ama:ama,
           ahka:r1(r1(mpta)-r1(ldfa)), KF:KF, KT:KT};
 }
 function nextStep(){ return LM_STEPS.find(function(s){return !M.pts[s.k];}) || null; }
+function requiredDone(){ return LM_STEPS.filter(function(s){return !s.opt;})
+  .every(function(s){return !!M.pts[s.k];}); }
 
 function drawCanvas(){
   const cv=document.getElementById("cv"); if(!M.img) return;
@@ -2233,7 +2252,7 @@ function renderMeas(){
   const sn=document.getElementById("stepnow");
   if(step){
     const txt=LANG==="lt"?step.lt:step.en;
-    sn.innerHTML='<b>'+esc((LANG==="lt"?"Taškas ":"Point ")+(M.order.length+1)+" / 6")+'</b>'+esc(txt[0])+' \u2014 '+esc(txt[1]);
+    sn.innerHTML='<b>'+esc((LANG==="lt"?"Taškas ":"Point ")+(Math.min(M.order.length+1,6))+" / 6"+(nextStep()&&nextStep().opt?" \u00b7 "+t("m.optional"):""))+'</b>'+esc(txt[0])+' \u2014 '+esc(txt[1]);
   } else {
     sn.innerHTML='<b>'+esc(LANG==="lt"?"Baigta":"Complete")+'</b>'
       +esc(LANG==="lt"?"Tempkite bet kurį tašką, kad patikslintumėte.":"Drag any point to refine it.");
@@ -2245,11 +2264,12 @@ function renderMeas(){
     if(M.pts[s.k]) el.className="done";
     lm.appendChild(el);
   });
-  const r=measured();
+  const r=requiredDone() ? measured() : null;
   const out=document.getElementById("measout");
   if(r){
     out.classList.remove("hidden");
     const rows=[["LDFA",deg2(r.ldfa)],["MPTA",deg2(r.mpta)],["aHKA",sgn(r.ahka)+"\u00B0"],
+                [t("m.ama"), r.ama===null ? t("m.amaNo") : deg2(r.ama)],
                 [LANG==="lt"?"Išmatuotas HKA":"Measured HKA",sgn(r.hka)+"\u00B0"],
                 [LANG==="lt"?"Sąnario linijų kampas":"Joint line convergence",deg2(180-r.jlca)]];
     document.getElementById("mtbl").innerHTML=rows.map(function(x){
@@ -2314,6 +2334,7 @@ document.getElementById("btn-apply").addEventListener("click",function(){
   document.getElementById("i-ldfa").value=r.ldfa.toFixed(1);
   document.getElementById("i-mpta").value=r.mpta.toFixed(1);
   document.getElementById("i-hka").value=r.hka.toFixed(1);
+  if(r.ama!==null){ S.ama=r.ama; S.amaMeasured=true; }
   ["r-ldfa","r-mpta"].forEach(function(id){
     const rg=document.getElementById(id), n=document.getElementById(id.replace("r-","i-"));
     rg.value=Math.min(parseFloat(rg.max),Math.max(parseFloat(rg.min),parseFloat(n.value)));
@@ -2331,7 +2352,6 @@ document.getElementById("btn-apply").addEventListener("click",function(){
   paintTrack(z);
   document.getElementById("zoomval").textContent=fmt(S.zoom)+"\u00D7";
 })();
-linkSlider("i-ama","r-ama");
 linkSlider("i-hka","r-hka");
 linkSlider("i-slope","r-slope");
 
