@@ -229,11 +229,17 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
   color:var(--teal);cursor:pointer}
 .alt[aria-pressed="true"]{background:var(--teal);color:var(--drape);border-color:var(--teal)}
 .caserow{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
-.caselab{font-size:12.5px;color:var(--bone);flex:1 1 auto;line-height:1.4}
+.caselab{font-size:12.5px;color:var(--bone);line-height:1.4;margin:0 0 10px}
+.caseh{font-size:15px;font-weight:500;color:var(--ink);flex:1 1 auto}
 .caselab.measured{color:var(--teal);font-weight:500}
 .newcase{flex:0 0 auto;font:inherit;font-size:13.5px;min-height:44px;padding:0 16px;
   border-radius:9px;border:.5px solid var(--teal);background:var(--surface);
   color:var(--teal);font-weight:500;cursor:pointer}
+.about-fold{margin-top:18px}
+.about-fold>summary{color:var(--bone)}
+.ab-lead{margin:0 0 9px;font-size:15px;font-weight:500;line-height:1.4;color:var(--teal)}
+.ab-body{margin:0 0 9px;font-size:13.5px;line-height:1.55}
+.ab-small{margin:0;font-size:12.5px;line-height:1.5;color:var(--bone)}
 .about{background:var(--drape);border-radius:14px;padding:15px 16px;margin:4px 0 20px}
 .about p{margin:0 0 8px;font-size:13px;line-height:1.55;color:#14503F}
 .about p:last-child{margin:0}
@@ -442,58 +448,34 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
 
 <section id="s-case" class="on">
   <div class="caserow">
-    <span class="caselab" id="caselab"></span>
+    <span class="caseh" data-i="c.hdr">Plan</span>
     <button id="btn-newcase" class="newcase" data-i="c.new">New case</button>
   </div>
 
-  <div class="about">
-    <p class="lead" data-i="ab.lead">A calculator for checking that the bony resections you plan and the ones you execute agree.</p>
-    <p data-i="ab.body">Enter the leg parameters and it works out the resection depth for each cut under each alignment strategy. Enter what you measured with the caliper in theatre and it shows where the two diverge, and by how much.</p>
-    <p class="small" data-i="ab.limit">It computes geometry from the figures you give it. It does not measure the knee, choose a strategy, or judge whether a plan is right for a patient.</p>
-  </div>
-
-  <h2 data-i="c.step1">1 · Side and implant</h2>
-  <div class="seg">
-    <button data-side="right" aria-pressed="true" data-i="c.right">Right</button>
-    <button data-side="left" aria-pressed="false" data-i="c.left">Left</button>
-  </div>
-  <p class="lede" data-i="c.impl">Implant — MicroPort Evolution MP</p>
-  <div class="strip" id="sizes"></div>
-  <div class="chips" id="implchips"></div>
-  <p class="lede" id="bladenote"></p>
+  <h2 data-i="c.step1">1 · Case</h2>
   <div class="fld"><label for="i-caseno"><span data-i="c.caseno">Case number</span><span class="hint" data-i="c.casenoH">Your own reference — no patient identifier</span></label>
     <input id="i-caseno" type="text" inputmode="text" maxlength="16" placeholder="—"></div>
   <div class="fld"><label for="i-surgdate" data-i="c.surgdate">Date of surgery</label>
     <input id="i-surgdate" type="date"></div>
+  <div class="seg" style="margin-top:12px">
+    <button data-side="right" aria-pressed="true" data-i="c.right">Right</button>
+    <button data-side="left" aria-pressed="false" data-i="c.left">Left</button>
+  </div>
 
-  <h2 data-i="c.step2">2 · Leg parameters</h2>
-  <div class="sldr">
-    <div class="top"><label for="i-ldfa">LDFA<span class="hint" data-i="c.ldfaH">Mechanical, to bone contour</span></label>
-      <input id="i-ldfa" type="number" step="0.1" value="87.0" inputmode="decimal"></div>
-    <input id="r-ldfa" class="range" type="range" min="80" max="98" step="0.1" value="87.0"
-      aria-label="LDFA">
-    <div class="ticks"><span>80</span><span data-i="c.valgusF">valgus femur</span><span>90</span><span data-i="c.varusF">varus femur</span><span>98</span></div>
+  <h2 data-i="c.step2">2 · Implant</h2>
+  <p class="lede" data-i="c.impl">Implant — MicroPort Evolution MP</p>
+  <div class="strip" id="sizes"></div>
+  <div class="chips" id="implchips"></div>
+  <div class="blade-row">
+    <div class="seg" role="group" style="flex:0 0 auto">
+      <button data-blade="1" aria-pressed="false" data-i="v.blade">Blade</button>
+    </div>
+    <span class="note" id="bladenote"></span>
   </div>
-  <div class="sldr">
-    <div class="top"><label for="i-mpta">MPTA<span class="hint" data-i="c.mptaH">Mechanical, to bone contour</span></label>
-      <input id="i-mpta" type="number" step="0.1" value="84.5" inputmode="decimal"></div>
-    <input id="r-mpta" class="range" type="range" min="78" max="96" step="0.1" value="84.5"
-      aria-label="MPTA">
-    <div class="ticks"><span>78</span><span data-i="c.varusT">varus tibia</span><span>90</span><span data-i="c.valgusT">valgus tibia</span><span>96</span></div>
-  </div>
-  <div class="sldr">
-    <div class="top"><label for="i-hka"><span data-i="c.hka">Measured HKA</span><span class="hint" data-i="c.hkaH">Negative = varus</span></label>
-      <input id="i-hka" type="number" step="0.1" value="-7.0" inputmode="decimal"></div>
-    <input id="r-hka" class="range" type="range" min="-20" max="20" step="0.1" value="-7.0" aria-label="HKA">
-    <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
-  </div>
-  <div class="sldr">
-    <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
-      <input id="i-slope" type="number" step="0.1" value="7.0" inputmode="decimal"></div>
-    <input id="r-slope" class="range" type="range" min="0" max="16" step="0.1" value="7.0" aria-label="Tibial slope">
-    <div class="ticks"><span>0</span><span data-i="c.flat">flat</span><span>8</span><span data-i="c.steep">steep</span><span>16</span></div>
-  </div>
-  <details class="fold" id="measfold">
+
+  <h2 data-i="c.step3">3 · Leg parameters</h2>
+  <p class="caselab" id="caselab"></p>
+<details class="fold" id="measfold">
     <summary data-i="m.open">Measure from a radiograph instead</summary>
     <div class="foldbody">
 
@@ -539,17 +521,32 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     </div>
   </details>
 
-  <h2 data-i="cp.h">Phenotype — CPAK</h2>
-  <div class="cpwrap">
-    <div class="chips" id="cpchips" style="margin-bottom:10px"></div>
-    <svg id="cpgrid" viewBox="0 0 340 262" role="img" aria-label="CPAK grid"></svg>
-    <p class="splitlab" data-i="cp.split">Deformity split</p>
-    <div class="splitbar"><div id="cp-bony"></div><div id="cp-intra"></div></div>
-    <div class="lim2"><span id="cp-bonyL"></span><span id="cp-intraL"></span></div>
-    <div id="cpsens"></div>
+  <div class="sldr">
+    <div class="top"><label for="i-ldfa">LDFA<span class="hint" data-i="c.ldfaH">Mechanical, to bone contour</span></label>
+      <input id="i-ldfa" type="number" step="0.1" value="87.0" inputmode="decimal"></div>
+    <input id="r-ldfa" class="range" type="range" min="80" max="98" step="0.1" value="87.0" aria-label="LDFA">
+    <div class="ticks"><span>80</span><span data-i="c.valgusF">valgus femur</span><span>90</span><span data-i="c.varusF">varus femur</span><span>98</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-mpta">MPTA<span class="hint" data-i="c.mptaH">Mechanical, to bone contour</span></label>
+      <input id="i-mpta" type="number" step="0.1" value="84.5" inputmode="decimal"></div>
+    <input id="r-mpta" class="range" type="range" min="78" max="96" step="0.1" value="84.5" aria-label="MPTA">
+    <div class="ticks"><span>78</span><span data-i="c.varusT">varus tibia</span><span>90</span><span data-i="c.valgusT">valgus tibia</span><span>96</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-hka"><span data-i="c.hka">Measured HKA</span><span class="hint" data-i="c.hkaH">Negative = varus</span></label>
+      <input id="i-hka" type="number" step="0.1" value="-7.0" inputmode="decimal"></div>
+    <input id="r-hka" class="range" type="range" min="-20" max="20" step="0.1" value="-7.0" aria-label="HKA">
+    <div class="ticks"><span>−20</span><span data-i="c.varusL">varus</span><span>0</span><span data-i="c.valgusL">valgus</span><span>+20</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-slope"><span data-i="c.slope">Native tibial slope</span><span class="hint" data-i="c.slopeH">Guide gives 3° unless set anatomic</span></label>
+      <input id="i-slope" type="number" step="0.1" value="7.0" inputmode="decimal"></div>
+    <input id="r-slope" class="range" type="range" min="0" max="16" step="0.1" value="7.0" aria-label="Tibial slope">
+    <div class="ticks"><span>0</span><span data-i="c.flat">flat</span><span>8</span><span data-i="c.steep">steep</span><span>16</span></div>
   </div>
 
-  <h2 data-i="c.step3">3 · Wear</h2>
+  <h2 data-i="c.step4">4 · Wear</h2>
   <div class="wear" data-w="dm"><span data-i="c.dfm">Distal femur, medial</span><div class="steps"></div></div>
   <div class="wear" data-w="dl"><span data-i="c.dfl">Distal femur, lateral</span><div class="steps"></div></div>
   <div class="wear" data-w="pm"><span data-i="c.pfm">Posterior femur, posteromedial</span><div class="steps"></div></div>
@@ -566,6 +563,26 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   </details>
   <div id="rotnote"></div>
   <p class="lede" data-i="c.wearNote">Bone wear on the distal and posterior femur is not compensated for — it is reported as negligible even in advanced arthritis. Only cartilage is added back.</p>
+
+  <h2 data-i="c.result">Resulting phenotype</h2>
+  <div class="cpwrap">
+    <div class="chips" id="cpchips" style="margin-bottom:10px"></div>
+    <svg id="cpgrid" viewBox="0 0 340 268" role="img" aria-label="CPAK grid"></svg>
+    <p class="splitlab" data-i="cp.split">Deformity split</p>
+    <div class="splitbar"><div id="cp-bony"></div><div id="cp-intra"></div></div>
+    <div class="lim2"><span id="cp-bonyL"></span><span id="cp-intraL"></span></div>
+    <div id="cpsens"></div>
+  </div>
+
+  <details class="fold about-fold">
+    <summary data-i="c.aboutOpen">About this calculator</summary>
+    <div class="foldbody">
+      <p class="ab-lead" data-i="ab.lead">A calculator for checking that the bony resections you plan and the ones you execute agree.</p>
+      <p class="ab-body" data-i="ab.body">Enter the leg parameters and it works out the resection depth for each cut under each alignment strategy. Enter what you measured with the caliper in theatre and it shows where the two diverge, and by how much.</p>
+      <p class="ab-small" data-i="ab.limit">It computes geometry from the figures you give it. It does not measure the knee, choose a strategy, or judge whether a plan is right for a patient.</p>
+    </div>
+  </details>
+
   <div class="dis" data-i="d.def">Geometric simulation based on values you entered. Not a medical device. Not for clinical decision-making.</div>
 </section>
 
@@ -773,7 +790,7 @@ const LT={
  "c.pfl":"Užpakalinis šlaunikaulis, posterolateralinis",
  "w.rot":"Užpakalinio nudilimo skirtumas {d} mm atitinka apie {a}° rotacijos. Atremiant kreiptuvą į nudilusius užpakalinius krumplius komponentas atsiduria santykinėje {dir} rotacijoje.",
  "w.rotInt":"vidinėje","w.rotExt":"išorinėje",
- "nav.thea":"Operacinė","nav.log":"Žurnalas","nav.pat":"Pacientui","nav.gaps":"Info",
+ "nav.thea":"Operacinė","nav.log":"Žurnalas","nav.pat":"Pacientui",
  "ev.h":"K\u0105 rodo tyrimai","ev.read":"Skaityti straipsn\u012F","ev.share":"Dalintis","ev.copied":"Nukopijuota",
  "ev.yes":"Nustatyta nauda","ev.partial":"Nedidel\u0117 nauda","ev.no":"Skirtumo nerasta",
  "ev.lede":"Tyrimai, lygin\u0119 \u0161iuos b\u016Bdus. Vieni nustat\u0117 naud\u0105, kiti \u2013 ne. Toks nesutarimas yra s\u0105\u017Eininga \u012Frodym\u0173 b\u016Bkl\u0117, tod\u0117l jis rodomas, o ne sl\u0117piamas.",
@@ -781,7 +798,9 @@ const LT={
  "th.bladeOff":"Tikslai \u2013 gylis, kuriam nustatytas kreiptuvas, prie\u0161 a\u0161men\u0173 pj\u016Bv\u012F.",
  "m.open":"Arba i\u0161matuoti i\u0161 rentgenogramos",
  "g.open":"Jei bandomieji tarpai nesutampa",
- "c.step1":"1 \u00b7 Pus\u0117 ir implantas","c.step2":"2 \u00b7 Kojos parametrai","c.step3":"3 \u00b7 Nudilimas",
+ "c.step1":"1 \u00b7 Atvejis","c.step2":"2 \u00b7 Implantas",
+ "c.step3":"3 \u00b7 Kojos parametrai","c.step4":"4 \u00b7 Nudilimas",
+ "c.result":"Gautas fenotipas","c.aboutOpen":"Apie \u0161i\u0105 skai\u010Diuokl\u0119",
  "ab.lead":"Skai\u010Diuokl\u0117, skirta patikrinti, ar suplanuotos ir atliktos kaulo rezekcijos sutampa.",
  "ab.body":"\u012Eveskite kojos parametrus \u2013 programa apskai\u010Diuos kiekvieno pj\u016Bvio rezekcijos gyl\u012F pagal kiekvien\u0105 a\u0161ies atstatymo strategij\u0105. \u012Eveskite, k\u0105 i\u0161matavote kaliperiu operacin\u0117je, ir ji parodys, kur ir kiek jos i\u0161siskiria.",
  "ab.limit":"Ji skai\u010Diuoja geometrij\u0105 pagal j\u016Bs\u0173 pateiktus duomenis. Ji nematuoja kelio, nepasirenka strategijos ir nevertina, ar planas tinka pacientui.",
@@ -818,6 +837,7 @@ const LT={
  "sh.date":"Planuota {d}",
  "sh.resections":"Rezekcijos",
  "sh.blade":"Tikslin\u0117s reik\u0161m\u0117s \u2013 kaulo plok\u0161tel\u0117, matuojama kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis. Leistina paklaida \u00b10,5 mm; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
+ "c.hdr":"Planas",
  "c.new":"Naujas atvejis",
  "c.newConfirm":"I\u0161valyti \u0161\u012F atvej\u012F? Kampai, nudilimas, orientyrai, rentgenograma ir operacin\u0117s matavimai bus i\u0161trinti.",
  "c.entered":"Reik\u0161m\u0117s \u012Fvestos ranka. Pa\u017Eym\u0117kite rentgenogram\u0105 Matavimo skirtuke, kad b\u016Bt\u0173 apskai\u010Diuotos.",
@@ -987,6 +1007,9 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "c.hdr":"Plan",
+ "c.step4":"4 · Wear","c.result":"Resulting phenotype",
+ "c.aboutOpen":"About this calculator",
  "c.caseno":"Case number","c.casenoH":"Your own reference — no patient identifier",
  "c.surgdate":"Date of surgery",
  "sh.implant":"Implant","sh.plan":"Plan","sh.signed":"Checked by",
@@ -1103,7 +1126,7 @@ const EN={
  "cr.dis":"A geometric calculator. It does not imply or replace medical judgement.",
  "m.open":"Measure from a radiograph instead",
  "g.open":"If the trial gaps do not match",
- "c.step1":"1 \u00b7 Side and implant","c.step2":"2 \u00b7 Leg parameters","c.step3":"3 \u00b7 Wear","v.gapset":"set by gaps",
+ "c.step1":"1 \u00b7 Case","c.step2":"2 \u00b7 Implant","c.step3":"3 \u00b7 Leg parameters","v.gapset":"set by gaps",
  "th.bladeOn":"Targets are the bone slab you can caliper — guide depth less the {v} mm blade.",
  "th.bladeOff":"Targets are the depth the guide is set to, before the blade takes its cut.",
  "pp.rka":"Mostly as built",
@@ -2049,7 +2072,7 @@ function renderSizes(){
     '<span class="chip">'+esc(LANG==="lt"?"Distalinis":"Distal")+' <b>'+fmt(EVO.distal,0)+'</b> mm</span>'
    +'<span class="chip">'+esc(LANG==="lt"?"Užpakalinis":"Posterior")+' <b>'+fmt(EVO.post[S.size],0)+'</b> mm</span>'
    +'<span class="chip">M/L <b>'+fmt(EVO.ml[S.size],0)+'</b> mm</span>'
-   +'<span class="chip">'+esc(t("c.blade"))+' <b>'+fmt(EVO.blade)+'</b> mm</span>';
+   +'<span class="chip">'+esc(t("c.blade"))+' <b>'+fmt(EVO.blade,2)+'</b> mm</span>';
 }
 function renderWear(){
   document.querySelectorAll(".wear").forEach(function(row){
