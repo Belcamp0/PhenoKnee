@@ -1744,13 +1744,16 @@ function drawFigAP(c){
   /* On a true lateral both condyles superimpose with a slight offset — the
      double contour is what makes a lateral film read as a lateral. */
   {
+    /* The far condyle, drawn from the OTHER compartment's profile rather than
+       as an offset copy — the two genuinely differ in the sagittal plane, and
+       that difference is what the double contour is showing. */
+    const other=femProfile(!med);
     let dc="";
-    for(let ph=44; ph>=-100; ph-=8){
-      const r=femR(ph)-2.1, d=ph*Math.PI/180;
-      const q=tfF([FEM_O[0]+r*Math.sin(d), FEM_O[1]+r*Math.cos(d)]);
-      dc+=(dc?" L":"M")+q[0].toFixed(1)+","+q[1].toFixed(1);
-    }
-    g+='<path d="'+dc+'" fill="none" stroke="#8C8878" stroke-width="0.9" stroke-opacity="0.7"/>';
+    other.forEach(function(pt,i){
+      const q=tfF([pt[0], pt[1]-1.6]);
+      dc+=(i?" L":"M")+q[0].toFixed(1)+","+q[1].toFixed(1);
+    });
+    g+='<path d="'+dc+'" fill="none" stroke="#8C8878" stroke-width="0.9" stroke-opacity="0.65"/>';
   }
   g+='<path d="'+path(tfF,apPatella(med))+'" fill="url(#shaft)" fill-opacity="0.9" stroke="#8C8878" stroke-width="1.2" stroke-linejoin="round"/>';
   /* Extensor mechanism: quadriceps tendon above, patellar tendon running to
