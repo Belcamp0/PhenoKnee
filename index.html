@@ -185,7 +185,15 @@ svg.plan{display:block;width:100%;background:var(--mist);border-radius:12px;marg
 .v-yes{background:var(--within-bg);color:var(--within-tx)}
 .v-partial{background:var(--edge-bg);color:var(--edge-tx)}
 .v-no{background:var(--mist);color:var(--bone)}
-.elg{border:.5px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px}
+.parthd{display:flex;align-items:center;gap:9px;margin:22px 0 8px;font-size:15px;font-weight:500}
+.parthd .pnum{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--teal);
+  color:var(--drape);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.elg{border:.5px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px;
+  border-left-width:4px;border-left-color:var(--border)}
+.elg.in{border-left-color:var(--within)}
+.elg.near{border-left-color:var(--edge)}
+.elg.off{border-left-color:var(--outside)}
+.elg.na{border-left-color:var(--bone)}
 .elg .top{display:flex;align-items:baseline;gap:9px;margin-bottom:3px}
 .elg .ab{font-size:19px;font-weight:600;color:var(--teal);line-height:1}
 .elg .nm{font-size:13px;color:var(--ink)}
@@ -448,7 +456,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
 <nav role="tablist">
   <button role="tab" data-tab="case" aria-selected="true" data-i="nav.case">Case</button>
   <button role="tab" data-tab="plan" aria-selected="false" data-i="nav.plan">Cuts</button>
-  <button role="tab" data-tab="elig" aria-selected="false" data-i="nav.elig">Eligibility</button>
+  <button role="tab" data-tab="elig" aria-selected="false" data-i="nav.elig">Approach</button>
   <button role="tab" data-tab="thea" aria-selected="false" data-i="nav.thea">Theatre</button>
   <button role="tab" data-tab="pat" aria-selected="false" data-i="nav.pat">Patient</button>
   <button role="tab" data-tab="log" aria-selected="false" data-i="nav.log">Log</button>
@@ -563,7 +571,24 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <div class="ticks"><span>0</span><span data-i="c.flat">flat</span><span>8</span><span data-i="c.steep">steep</span><span>16</span></div>
   </div>
 
-  <h2 data-i="c.step4">4 · Wear</h2>
+  <h2 data-i="c.step4">4 · Patient factors</h2>
+  <p class="lede" data-i="c.pfH">Used only to check the published limits for each arthrotomy.</p>
+  <div class="sldr">
+    <div class="top"><label for="i-bmi" data-i="c.bmi">Body mass index</label>
+      <input id="i-bmi" type="number" step="0.5" value="30" inputmode="decimal"></div>
+    <input id="r-bmi" class="range" type="range" min="18" max="50" step="0.5" value="30" aria-label="BMI">
+    <div class="ticks"><span>18</span><span>30</span><span>35</span><span>50</span></div>
+  </div>
+  <div class="sldr">
+    <div class="top"><label for="i-rom" data-i="c.rom">Preoperative flexion</label>
+      <input id="i-rom" type="number" step="5" value="120" inputmode="decimal"></div>
+    <input id="r-rom" class="range" type="range" min="50" max="150" step="5" value="120" aria-label="Preoperative flexion">
+    <div class="ticks"><span>50</span><span data-i="c.stiff">stiff</span><span>110</span><span>150</span></div>
+  </div>
+  <label class="chk"><input id="i-prev" type="checkbox"><span data-i="c.prevSurg">Previous knee surgery or incision</span></label>
+  <label class="chk"><input id="i-baja" type="checkbox"><span data-i="c.baja">Patella baja or short patellar tendon</span></label>
+
+  <h2 data-i="c.step5">5 · Wear</h2>
   <div class="wear" data-w="dm"><span data-i="c.dfm">Distal femur, medial</span><div class="steps"></div></div>
   <div class="wear" data-w="dl"><span data-i="c.dfl">Distal femur, lateral</span><div class="steps"></div></div>
   <div class="wear" data-w="pm"><span data-i="c.pfm">Posterior femur, posteromedial</span><div class="steps"></div></div>
@@ -636,6 +661,7 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
     <span><i class="sw" style="background:#888780"></i><span data-i="lg.mech">Mechanical axis</span></span>
   </div>
   <div id="guiderow"></div>
+  <div id="flexplan"></div>
   <div class="seg" role="group" style="margin-top:2px">
     <button id="btn-print" data-i="p.print">Print theatre sheet</button>
   </div>
@@ -661,12 +687,15 @@ input.range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;backgroun
   <h2 data-i="el.case">This case</h2>
   <div class="chips" id="el-chips"></div>
 
-  <h2 data-i="el.crit">Against each protocol's published criteria</h2>
+  <div class="parthd"><span class="pnum">1</span><span data-i="el.arth">Arthrotomy</span></div>
+  <p class="lede" data-i="el.arthNote">No midterm or long-term difference in functional outcome has been shown between the medial parapatellar, midvastus and subvastus approaches, and the early advantage of the quadriceps-sparing exposures disappears by three to six months. What follows is published relative limits checked against this case, not a preference.</p>
+  <div id="el-arth"></div>
+
+  <div class="parthd"><span class="pnum">2</span><span data-i="el.align">Alignment strategy</span></div>
+  <p class="lede" data-i="el.guide">The AAOS clinical practice guideline carries a strong recommendation that there is no difference in composite or functional outcomes, or in complications, between kinematic and mechanical alignment principles. No professional body recommends one strategy over another, so what follows is whether each protocol's criteria are met and what the evidence says — it does not rank the options or choose for you.</p>
   <div id="el-list"></div>
-
-  <div class="warnbox w-info" data-i="el.guide">The AAOS clinical practice guideline carries a strong recommendation that there is no difference in composite or functional outcomes, or in complications, between kinematic and mechanical alignment principles. No professional body recommends one strategy over another, so this page reports whether the criteria are met and what the evidence says — it does not rank the options or choose for you.</div>
-
   <div id="el-pheno"></div>
+
   <div class="dis" data-i="el.dis">Arithmetic comparison against published criteria, plus a summary of published findings. Not a recommendation and not a substitute for clinical judgement.</div>
 </section>
 
@@ -816,7 +845,40 @@ const LT={
  "m.open":"Arba i\u0161matuoti i\u0161 rentgenogramos",
  "g.open":"Jei bandomieji tarpai nesutampa",
  "c.step1":"1 \u00b7 Atvejis","c.step2":"2 \u00b7 Implantas",
- "c.step3":"3 \u00b7 Kojos parametrai","c.step4":"4 \u00b7 Nudilimas",
+ "su.med":"medialinis","su.lat":"lateralinis",
+ "el.arth":"Artrotomija","el.align":"A\u0161ies strategija",
+ "al.noBound":"Ribos netaikomos \u2013 atkuriamos nat\u016Bralios s\u0105nario linijos.",
+ "al.noLimit":"Anatomini\u0173 rib\u0173 n\u0117ra; b\u016Bdas i\u0161taiso tai, k\u0105 randa \u2013 \u010Dia {v}\u00b0, imama i\u0161 kaulo.",
+ "al.allMet":"Visi skelbti kriterijai tenkinami be korekcijos.",
+ "al.breach":"U\u017E skelbt\u0173 kriterij\u0173: {n}.",
+ "al.cLdfa3":"\u0161launikaulio s\u0105nario linija vir\u0161 3\u00b0","al.cMpta3":"blauzdikaulio s\u0105nario linija vir\u0161 3\u00b0",
+ "al.cLdfa5":"\u0161launikaulio s\u0105nario linija vir\u0161 5\u00b0","al.cMpta5":"blauzdikaulio s\u0105nario linija vir\u0161 5\u00b0",
+ "al.cLimb3":"gal\u016Bn\u0117s a\u0161is vir\u0161 3\u00b0","al.cTib":"blauzdikaulis u\u017E 6\u00b0 varus iki 2\u00b0 valgus rib\u0173",
+ "ar.mpp":"MPP","ar.mv":"MV","ar.sv":"SV","ar.qs":"QS","ar.lpp":"LPP",
+ "ar.fmpp":"Medialinis parapatelinis","ar.fmv":"Midvastus","ar.fsv":"Subvastus",
+ "ar.fqs":"Tausojantis keturgalv\u012F","ar.flpp":"Lateralinis parapatelinis",
+ "ar.noLimit":"Skelbt\u0173 rib\u0173 n\u0117ra \u2013 tinka bet kokiai deformacijai ir judesio amplitudei, prireikus prapl\u0117\u010Diamas.",
+ "ar.allMet":"Visos skelbtos santykin\u0117s ribos \u0161iam atvejui tenkinamos.",
+ "ar.breach":"U\u017E skelbt\u0173 rib\u0173: {n}.",
+ "ar.lppYes":"Indikuotinas d\u0117l {v}\u00b0 valgus deformacijos; leid\u017Eia atpalaiduoti lateralines strukt\u016Bras i\u0161 vidaus.",
+ "ar.lppNo":"Skirtas fiksuotam valgus, vir\u0161ijan\u010Diam apie 15\u201320\u00b0. \u0160iai deformacijai neindikuotinas.",
+ "ar.cBmi30":"KMI vir\u0161 30","ar.cBmi35":"KMI vir\u0161 35","ar.cDef10":"deformacija vir\u0161 10\u00b0",
+ "ar.cDef15":"deformacija vir\u0161 15\u00b0","ar.cFlex10":"kontrakt\u016Bra vir\u0161 10\u00b0","ar.cFlex15":"kontrakt\u016Bra vir\u0161 15\u00b0",
+ "ar.cRom90":"lenkimas ma\u017Eiau nei 90\u00b0","ar.cRom100":"lenkimas ma\u017Eiau nei 100\u00b0",
+ "ar.cBaja":"patella baja arba trumpas girnel\u0117s rai\u0161tis","ar.cPrev":"ankstesn\u0117 kelio operacija",
+ "ar.cValg10":"valgus vir\u0161 10\u00b0","ar.cValg15":"valgus vir\u0161 15\u00b0",
+ "ar.valgNote":"{v}\u00b0 valgus keliui vis tiek reikia atpalaiduoti lateralines strukt\u016Bras, kurias medialinis pri\u0117jimas pasiekia sunkiau.",
+ "ar.nMpp":"Pagrindinis b\u016Bdas, taikomas apie devyniais atvejais i\u0161 de\u0161imties. Perskiria keturgalvio ir kapsul\u0117s rib\u0105, tod\u0117l l\u0117tina ankstyv\u0105 keturgalvio atsigavim\u0105.",
+ "ar.nMv":"Perskiria vastus medialis, o ne sausgysl\u0119. Nervas \u012F vastus medialis \u012Feina 9\u201312 cm vir\u0161 girnel\u0117s, tod\u0117l per auk\u0161tas pj\u016Bvis gali j\u012F pa\u017Eeisti.",
+ "ar.nSv":"Visi\u0161kai tausoja tiesiam\u0105j\u012F aparat\u0105 ir duoda greičiausi\u0105 ankstyv\u0105 atsigavim\u0105, ta\u010Diau ekspozicija ribo\u010Diausia.",
+ "ar.nQs":"Ma\u017Eiausiai pa\u017Eeid\u017Eia mink\u0161tuosius audinius, bet techni\u0161kai sud\u0117tingas; apra\u0161yta daugiau netaisyklingos komponent\u0173 pad\u0117ties atvej\u0173.",
+ "ar.nLpp":"Esant fiksuotam valgus, tiesiogiai sprend\u017Eia \u012Ftemptas lateralines strukt\u016Bras. Girnel\u0119 sunku i\u0161versti.",
+ "el.arthNote":"Tarp medialinio parapatelinio, midvastus ir subvastus b\u016Bd\u0173 nenustatyta vidutin\u0117s ar ilgos trukm\u0117s funkcini\u0173 rezultat\u0173 skirtumo, o ankstyvasis keturgalv\u012F tausojan\u010Di\u0173 b\u016Bd\u0173 pranašumas i\u0161nyksta per tris\u2013\u0161e\u0161is m\u0117nesius. \u017Demiau pateikiamos skelbtos santykin\u0117s ribos, o ne pirmenyb\u0117.",
+ "c.step3":"3 \u00b7 Kojos parametrai","c.step4":"4 \u00b7 Paciento veiksniai","c.step5":"5 \u00b7 Nudilimas",
+ "c.pfH":"Naudojama tik skelbtoms kiekvienos artrotomijos riboms patikrinti.",
+ "c.bmi":"K\u016Bno mas\u0117s indeksas","c.rom":"Prie\u0161operacinis lenkimas","c.stiff":"standus",
+ "c.prevSurg":"Ankstesn\u0117 kelio operacija ar pj\u016Bvis",
+ "c.baja":"Patella baja arba trumpas girnel\u0117s rai\u0161tis",
  "c.result":"Gautas fenotipas","c.aboutOpen":"Apie \u0161i\u0105 skai\u010Diuokl\u0119",
  "ab.lead":"Skai\u010Diuokl\u0117, skirta patikrinti, ar suplanuotos ir atliktos kaulo rezekcijos sutampa.",
  "ab.body":"\u012Eveskite kojos parametrus \u2013 programa apskai\u010Diuos kiekvieno pj\u016Bvio rezekcijos gyl\u012F pagal kiekvien\u0105 a\u0161ies atstatymo strategij\u0105. \u012Eveskite, k\u0105 i\u0161matavote kaliperiu operacin\u0117je, ir ji parodys, kur ir kiek jos i\u0161siskiria.",
@@ -854,7 +916,10 @@ const LT={
  "sh.date":"Planuota {d}",
  "sh.resections":"Rezekcijos",
  "sh.blade":"Tikslin\u0117s reik\u0161m\u0117s \u2013 kaulo plok\u0161tel\u0117, matuojama kaliperiu: kreiptuvo gylis at\u0117mus {v} mm a\u0161menis. Leistina paklaida \u00b10,5 mm; medialinis ir lateralinis blauzdikaulio storis ties an\u010Diuk\u0173 pagrindu turi sutapti 0,5 mm ribose nuo suplanuoto polinkio.",
- "sh.film":"I\u0161matuota rentgenograma","sh.valgus":"Valgus",
+ "sh.film":"I\u0161matuota rentgenograma","sh.valgus":"Valgus","el.bMpta":"blauzdikaulio s\u0105nario linija","el.bLimb":"gal\u016Bn\u0117s a\u0161is",
+ "fp.lever":"{d}\u00b0 kontrakt\u016Bra. \u0160is b\u016Bdas nesiekia atkurti s\u0105nario linijos, tod\u0117l papildoma distalin\u0117 \u0161launikaulio rezekcija yra \u012Fprastas sprendimas \u2013 {a} mm pagal tradicin\u012F protokol\u0105, {b} mm pagal robotin\u0119 serij\u0105.",
+ "fp.depart":"{d}\u00b0 kontrakt\u016Bra. \u0160is b\u016Bdas atkuria nat\u016Brali\u0105 s\u0105nario linij\u0105, tod\u0117l papildoma distalin\u0117 rezekcija yra nukrypimas nuo jo prielaidos, o ne koregavimas jos viduje \u2013 {a} mm arba {b} mm pakelt\u0173 s\u0105nario linij\u0105 tiek pat. Osteofit\u0173 pa\u0161alinimas ir u\u017Epakalin\u0117s kapsul\u0117s atpalaidavimas koreguoja kontrakt\u016Br\u0105 jos nepakeliant.",
+ "fp.gaps":"{d}\u00b0 kontrakt\u016Bra. \u0160iame b\u016Bde distalinis \u0161launikaulio pj\u016Bvis nustatomas pagal tarpus, tod\u0117l kontrakt\u016Bra sprend\u017Eiama operacijos metu, o ne planuojama kaip rezekcijos gylis.",
  "c.flex":"Fiksuota lenkimo kontrakt\u016Bra","c.flexH":"Tiesimo deficitas atpalaidavus kel\u012F",
  "c.hyperext":"hiperekstenzija","c.contract":"kontrakt\u016Bra",
  "fx.head":"{v}\u00b0 kontrakt\u016Bra. Publikuota praktika nesutaria, kiek papildomai imti i\u0161 distalinio \u0161launikaulio, tod\u0117l rodomos abi reik\u0161m\u0117s.",
@@ -882,7 +947,7 @@ const LT={
  "gd.amaM":"anatomin\u0117s ir mechanin\u0117s a\u0161ies kampas {v}\u00b0, i\u0161matuotas",
  "gd.na":"\u0160ioje strategijoje distalinis \u0161launikaulio pj\u016Bvis nustatomas pagal tarpus, tod\u0117l kreiptuvo kampo i\u0161vesti negalima.",
  "nav.elig":"Tinkamumas",
- "el.case":"\u0160is atvejis","el.crit":"Pagal kiekvieno protokolo skelbtus kriterijus",
+ "el.case":"\u0160is atvejis",
  "el.met":"Kriterijai tenkinami","el.adj":"Reikia korekcijos","el.always":"Rib\u0173 n\u0117ra",
  "el.nocorr":"korekcijos nereikia","el.gapset":"\u0161launikaulis nustatomas operacijos metu pagal tarpus",
  "el.corr":"reik\u0117t\u0173 {f}\u00b0 \u0161launikaulio ir {tb}\u00b0 blauzdikaulio korekcijos",
@@ -1033,6 +1098,44 @@ const LT={
 };
 const EN={
  "v.imp":"Implant",
+ "el.align":"Alignment strategy",
+ "al.noBound":"No boundary applied — the native joint lines are reproduced as measured.",
+ "al.noLimit":"No anatomic limit; the approach corrects whatever it finds — {v}° here, taken from bone.",
+ "al.allMet":"All published criteria met without adjustment.",
+ "al.breach":"Outside published criteria: {n}.",
+ "al.cLdfa3":"femoral joint line beyond 3°","al.cMpta3":"tibial joint line beyond 3°",
+ "al.cLdfa5":"femoral joint line beyond 5°","al.cMpta5":"tibial joint line beyond 5°",
+ "al.cLimb3":"limb alignment beyond 3°","al.cTib":"tibia outside 6° varus to 2° valgus",
+ "su.med":"medial","su.lat":"lateral","c.side":"Side",
+ "th.cut":"Resection","th.tgt":"Target","th.meas":"Measured","th.delta":"Delta",
+ "el.arth":"Arthrotomy",
+ "ar.mpp":"MPP","ar.mv":"MV","ar.sv":"SV","ar.qs":"QS","ar.lpp":"LPP",
+ "ar.fmpp":"Medial parapatellar","ar.fmv":"Midvastus","ar.fsv":"Subvastus",
+ "ar.fqs":"Quadriceps-sparing","ar.flpp":"Lateral parapatellar",
+ "ar.noLimit":"No published limits \u2014 suitable for any deformity, any range of motion, and extensile if exposure proves difficult.",
+ "ar.allMet":"All published relative limits met for this case.",
+ "ar.breach":"Outside published limits: {n}.",
+ "ar.lppYes":"Indicated by the {v}\u00b0 valgus deformity; it addresses the tight lateral structures from within and avoids excessive medial release.",
+ "ar.lppNo":"Reserved for fixed valgus beyond about 15\u201320\u00b0. Not indicated by this deformity.",
+ "ar.cBmi30":"BMI over 30","ar.cBmi35":"BMI over 35","ar.cDef10":"deformity over 10\u00b0",
+ "ar.cDef15":"deformity over 15\u00b0","ar.cFlex10":"contracture over 10\u00b0","ar.cFlex15":"contracture over 15\u00b0",
+ "ar.cRom90":"flexion under 90\u00b0","ar.cRom100":"flexion under 100\u00b0",
+ "ar.cBaja":"patella baja or short patellar tendon","ar.cPrev":"previous knee surgery",
+ "ar.cValg10":"valgus over 10\u00b0","ar.cValg15":"valgus over 15\u00b0",
+ "ar.valgNote":"A {v}\u00b0 valgus knee still needs the lateral structures released, which a medial exposure reaches less directly.",
+ "ar.nMpp":"The workhorse, used in roughly nine cases in ten. Divides the quadriceps\u2013capsule interface, which delays early quadriceps recovery and reduces patellar blood supply.",
+ "ar.nMv":"Splits the vastus medialis rather than the tendon. The nerve to the vastus medialis enters 9\u201312 cm above the patella, so a proximal split risks denervating it.",
+ "ar.nSv":"Spares the extensor mechanism entirely and gives the fastest early recovery, but exposure is the most limited. Large thighs prevent adequate elevation of the muscle.",
+ "ar.nQs":"Least soft-tissue disruption, but technically demanding, and higher rates of component malposition have been reported.",
+ "ar.nLpp":"For fixed valgus it addresses the tight lateral structures directly. Patellar eversion is difficult and closure can be demanding.",
+ "el.arthNote":"No midterm or long-term difference in functional outcome has been shown between the medial parapatellar, midvastus and subvastus approaches, and the early advantage of the quadriceps-sparing exposures disappears by three to six months. The figures below report published relative limits, not a preference.",
+ "c.step5":"5 · Wear","c.pfH":"Used only to check the published limits for each arthrotomy.",
+ "c.bmi":"Body mass index","c.rom":"Preoperative flexion","c.stiff":"stiff",
+ "c.prevSurg":"Previous knee surgery or incision",
+ "c.baja":"Patella baja or short patellar tendon","el.bMpta":"tibial joint line","el.bLimb":"limb alignment",
+ "fp.lever":"{d}° contracture. This approach does not aim to restore the joint line, so additional distal femoral resection is the usual lever — {a} mm by the traditional protocol, {b} mm by the robotic series.",
+ "fp.depart":"{d}° contracture. This approach restores the native joint line, so additional distal resection is a departure from its premise, not an adjustment within it — {a} mm traditional or {b} mm observed would raise the joint line by that amount. Osteophyte excision and posterior release address a contracture without moving it.",
+ "fp.gaps":"{d}° contracture. The distal femoral cut is set from the gaps in this approach, so the contracture is addressed intra-operatively rather than planned as a resection depth.",
  "c.flex":"Fixed flexion deformity","c.flexH":"Extension deficit with the knee relaxed",
  "c.hyperext":"hyperextension","c.contract":"contracture",
  "fx.head":"A {v}° contracture. Published practice disagrees on how much extra distal femur to take, so both figures are shown.",
@@ -1090,7 +1193,7 @@ const EN={
  "gd.bush":"nearest bushing {b}°","gd.off":"leaves {v}° of residual tilt",
  "gd.ama":"anatomic–mechanical angle {v}°",
  "gd.na":"The distal femoral cut is set from the gaps in this strategy, so there is no guide angle to derive.",
- "el.case":"This case","el.crit":"Against each protocol's published criteria",
+ "el.case":"This case",
  "el.met":"Criteria met","el.adj":"Adjustment needed","el.always":"No boundary",
  "el.nocorr":"no adjustment required","el.gapset":"femur set intra-operatively from the gaps",
  "el.corr":"would need {f}° femoral and {tb}° tibial correction",
@@ -1240,7 +1343,7 @@ const S={view:"ml",comp:"med",patStrat:"ka",blade:false,zoom:1.3,
   /* Femoral anatomic-mechanical angle. Population mean until the canal is
      marked on a film: it depends on shaft bow and femoral length, so it cannot
      be derived from the joint line angles. */
-  ama:6, amaMeasured:false, flex:0,
+  ama:6, amaMeasured:false, flex:0, bmi:30, rom:120, prevSurg:false, baja:false,
   // Implant overlay is held back until the component outlines are checked
   // against the technique guide. Flip this to true to bring it back.
   implant:false, implantEnabled:false,
@@ -1254,6 +1357,9 @@ const V=id=>document.getElementById(id).value;
 const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:0;};
 function read(){
   S.ldfa=num(V("i-ldfa"));S.mpta=num(V("i-mpta"));S.hka=num(V("i-hka"));S.slope=num(V("i-slope"));S.flex=num(V("i-flex"));
+  S.bmi=num(V("i-bmi")); S.rom=num(V("i-rom"));
+  S.prevSurg=document.getElementById("i-prev").checked;
+  S.baja=document.getElementById("i-baja").checked;
 }
 
 /* Bring the limb inside a boundary by moving components toward neutral.
@@ -2203,6 +2309,105 @@ function renderCorrection(c){
    so there is no guideline basis on which to recommend one, and choosing a
    strategy for a particular patient is a clinical judgement rather than an
    arithmetic result. */
+/* Arthrotomy suitability, from published relative limits.
+
+   The medial parapatellar approach carries no limits — it is the workhorse,
+   used in roughly nine cases in ten, and is extensile. The quadriceps-sparing
+   exposures trade exposure for early recovery and carry numeric thresholds.
+   The lateral approach is not a general option at all: it is indicated by
+   severe valgus rather than permitted by the absence of obstacles, so it is
+   scored the other way round.
+
+   Reported as constraints met, with the breached ones named. Not a ranking:
+   no midterm difference in outcome has been shown between the medial
+   parapatellar, midvastus and subvastus approaches. */
+/* Deformity is read by direction, not magnitude alone. A valgus knee needs the
+   tight lateral structures released, which the medial exposures reach poorly,
+   so the same number of degrees constrains them more than it would in varus —
+   and beyond roughly 15 to 20 degrees the lateral approach becomes the one
+   indicated rather than merely permitted. */
+function varusMag(){ return S.hka<0 ? Math.abs(S.hka) : 0; }
+function valgusMag(){ return S.hka>0 ? S.hka : 0; }
+const ARTHROTOMY=[
+  {id:"mpp", limits:[], note:"ar.nMpp"},
+  {id:"mv",  note:"ar.nMv", limits:[
+    {ok:function(){return S.bmi<=35;},           key:"ar.cBmi35"},
+    {ok:function(){return varusMag()<=15;},      key:"ar.cDef15"},
+    {ok:function(){return valgusMag()<=15;},     key:"ar.cValg15"},
+    {ok:function(){return S.flex<=15;},          key:"ar.cFlex15"},
+    {ok:function(){return !S.prevSurg;},         key:"ar.cPrev"}
+  ]},
+  {id:"sv",  note:"ar.nSv", limits:[
+    {ok:function(){return S.bmi<=35;},           key:"ar.cBmi35"},
+    {ok:function(){return varusMag()<=10;},      key:"ar.cDef10"},
+    {ok:function(){return valgusMag()<=10;},     key:"ar.cValg10"},
+    {ok:function(){return S.flex<=10;},          key:"ar.cFlex10"},
+    {ok:function(){return S.rom>=90;},           key:"ar.cRom90"},
+    {ok:function(){return !S.baja;},             key:"ar.cBaja"},
+    {ok:function(){return !S.prevSurg;},         key:"ar.cPrev"}
+  ]},
+  {id:"qs",  note:"ar.nQs", limits:[
+    {ok:function(){return S.bmi<=30;},           key:"ar.cBmi30"},
+    {ok:function(){return varusMag()<=10;},      key:"ar.cDef10"},
+    {ok:function(){return valgusMag()<=10;},     key:"ar.cValg10"},
+    {ok:function(){return S.flex<=10;},          key:"ar.cFlex10"},
+    {ok:function(){return S.rom>=100;},          key:"ar.cRom100"},
+    {ok:function(){return !S.prevSurg;},         key:"ar.cPrev"}
+  ]},
+  {id:"lpp", indicated:true, note:"ar.nLpp"}
+];
+/* Both halves of this tab answer the same question — how well does this case
+   sit against the published limits for each option — so they share one card
+   and one colour scale. Anything that reads as a ranking is avoided: the scale
+   describes fit with stated criteria, not preference between them. */
+function fitClass(pct){ return pct>=100?"in":pct>=60?"near":"off"; }
+function approachCard(o){
+  return '<div class="elg '+o.cls+'"><div class="top">'
+    +'<span class="ab arth">'+esc(o.abbr)+'</span>'
+    +'<span class="nm">'+esc(o.name)+'</span>'
+    +'<span class="apct '+o.cls+'">'+(o.pct===null?"\u2014":o.pct+"%")+'</span></div>'
+    +(o.pct===null?'':'<div class="abar"><i class="'+o.cls+'" style="width:'+Math.min(100,o.pct)+'%"></i></div>')
+    +'<p class="cr">'+esc(o.label)+'</p>'
+    +'<p class="ev">'+esc(o.note)+'</p></div>';
+}
+function renderArthrotomy(){
+  const el=document.getElementById("el-arth"); if(!el) return;
+  const valgus=valgusMag();
+  el.innerHTML=ARTHROTOMY.map(function(a){
+    let pct, cls, label;
+    if(a.id==="lpp"){
+      pct=Math.round(Math.min(1, valgus/20)*100);
+      cls = valgus>=20 ? "in" : valgus>=15 ? "near" : "na";
+      label = valgus>=15 ? t("ar.lppYes",{v:fmt(valgus)}) : t("ar.lppNo");
+    } else if(!a.limits.length){
+      pct=100; cls="in"; label=t("ar.noLimit");
+    } else {
+      const met=a.limits.filter(function(l){return l.ok();}).length;
+      const bad=a.limits.filter(function(l){return !l.ok();}).map(function(l){return t(l.key);});
+      pct=Math.round(met/a.limits.length*100);
+      cls=fitClass(pct);
+      label = bad.length ? t("ar.breach",{n:bad.join(", ")}) : t("ar.allMet");
+      if(!bad.length && valgus>=8) label += " " + t("ar.valgNote",{v:fmt(valgus)});
+    }
+    return approachCard({abbr:t("ar."+a.id), name:t("ar.f"+a.id),
+                         pct:pct, cls:cls, label:label, note:t(a.note)});
+  }).join("");
+}
+
+/* The same treatment for the alignment protocols: criteria met out of criteria
+   published, with the breached ones named. Kinematic alignment sets no
+   boundary and mechanical alignment sets no anatomic limit, so both are shown
+   as applicable rather than scored — a percentage there would invent a
+   comparison the criteria do not support. */
+const ALIGN_LIMITS={
+  ama:[{ok:function(){return Math.abs(S.ldfa-90)<=3;}, key:"al.cLdfa3"},
+       {ok:function(){return Math.abs(S.mpta-90)<=3;}, key:"al.cMpta3"},
+       {ok:function(){return Math.abs(r1(S.mpta-S.ldfa))<=3;}, key:"al.cLimb3"}],
+  rka:[{ok:function(){return Math.abs(S.ldfa-90)<=5;}, key:"al.cLdfa5"},
+       {ok:function(){return Math.abs(S.mpta-90)<=5;}, key:"al.cMpta5"},
+       {ok:function(){return Math.abs(r1(S.mpta-S.ldfa))<=3;}, key:"al.cLimb3"}],
+  ika:[{ok:function(){return S.mpta>=84 && S.mpta<=92;}, key:"al.cTib"}]
+};
 function renderEligibility(){
   const list=document.getElementById("el-list"); if(!list) return;
   const L=S.ldfa, M=S.mpta, a=r1(M-L), j=r1(M+L), intra=r1(S.hka-a);
@@ -2225,21 +2430,26 @@ function renderEligibility(){
   ];
   list.innerHTML=rows.map(function(r){
     const p=planned(r.id);
-    let stCls, stTxt;
-    if(r.id==="ka"||r.id==="ma"){ stCls="na"; stTxt=t("el.always"); }
-    else if(r.met){ stCls="met"; stTxt=t("el.met"); }
-    else { stCls="adj"; stTxt=t("el.adj"); }
-    let corr="";
+    const lim=ALIGN_LIMITS[r.id];
+    let pct=null, cls="na", label;
+    if(r.id==="ka"){ cls="in"; label=t("al.noBound"); }
+    else if(r.id==="ma"){
+      cls="na";
+      label=t("al.noLimit",{v:fmt(r1(Math.abs(S.ldfa-90)+Math.abs(S.mpta-90)))});
+    } else if(lim){
+      const met=lim.filter(function(x){return x.ok();}).length;
+      const bad=lim.filter(function(x){return !x.ok();}).map(function(x){return t(x.key);});
+      pct=Math.round(met/lim.length*100);
+      cls=fitClass(pct);
+      label = bad.length ? t("al.breach",{n:bad.join(", ")}) : t("al.allMet");
+    }
+    // what the plan would have to move to satisfy the protocol
     if(p.ldfa!==null){
-      const dF=Math.abs(r1(p.ldfa-L)), dT=Math.abs(r1(p.mpta-M));
-      corr = (dF<0.05&&dT<0.05) ? t("el.nocorr")
-           : t("el.corr",{f:fmt(dF),tb:fmt(dT)});
-    } else corr = t("el.gapset");
-    return '<div class="elg"><div class="top"><span class="ab">'+esc(t("ab."+r.id))+'</span>'
-      +'<span class="nm">'+esc(t("s."+r.id+"F"))+'</span>'
-      +'<span class="st '+stCls+'">'+esc(stTxt)+'</span></div>'
-      +'<p class="cr">'+esc(t(r.crit))+' \u2014 '+esc(corr)+'</p>'
-      +'<p class="ev">'+esc(t(r.ev))+'</p></div>';
+      const dF=Math.abs(r1(p.ldfa-S.ldfa)), dT=Math.abs(r1(p.mpta-S.mpta));
+      if(dF>=0.05||dT>=0.05) label += " " + t("el.corr",{f:fmt(dF),tb:fmt(dT)});
+    } else label += " " + t("el.gapset");
+    return approachCard({abbr:t("ab."+r.id), name:t("s."+r.id+"F"),
+                         pct:pct, cls:cls, label:label, note:t(r.ev)});
   }).join("");
 
   /* Phenotype-specific findings, shown only for the types where they exist. */
@@ -2367,14 +2577,17 @@ function newCase(){
   S.side="right"; S.size=4; S.strat="ka";
   S.ldfa=90; S.mpta=90; S.hka=0; S.slope=7;
   S.ama=6; S.amaMeasured=false; S.flex=0;
+  S.bmi=30; S.rom=120; S.prevSurg=false; S.baja=false;
+  ["i-prev","i-baja"].forEach(function(id){
+    const el=document.getElementById(id); if(el) el.checked=false;});
   S.blade=false;                       // no allowance assumed until chosen
   S.wear={dm:0,dl:0,pm:0,pl:0,tm:0,tl:0};
   document.querySelectorAll("[data-blade]").forEach(function(b){
     b.setAttribute("aria-pressed","false");});
   ["i-caseno","i-surgdate"].forEach(function(id){
     const el=document.getElementById(id); if(el) el.value="";});
-  ["i-ldfa","i-mpta","i-hka","i-slope","i-flex"].forEach(function(id){
-    const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7,"i-flex":0}[id];
+  ["i-ldfa","i-mpta","i-hka","i-slope","i-flex","i-bmi","i-rom"].forEach(function(id){
+    const v={"i-ldfa":90,"i-mpta":90,"i-hka":0,"i-slope":7,"i-flex":0,"i-bmi":30,"i-rom":120}[id];
     document.getElementById(id).value=v.toFixed(1);
     const r=document.getElementById(id.replace("i-","r-"));
     if(r){ r.value=clamp(v,parseFloat(r.min),parseFloat(r.max)); paintTrack(r); }
@@ -2608,6 +2821,36 @@ function renderFlex(){
     + '<p class="fxf">'+esc(t("fx.rate",{r:fmt(FLEX_PER_MM)}))+' '+esc(t("fx.soft"))+'</p>'
     + '</div>';
 }
+/* A contracture does not mean the same thing under every approach.
+
+   Symmetric additional distal resection raises the joint line but leaves LDFA,
+   MPTA and HKA untouched, so it never breaches an angular boundary. What it
+   breaches is joint line restoration — and only some approaches claim that:
+
+     MA, aMA   joint line restoration is not a goal, so extra distal resection
+               is consistent with the approach and is the standard lever
+     rKA, KA   restoring the native joint line is the premise, so extra distal
+               resection is a departure from it and the elevation is quantified
+     iKA       the femur is set from the gaps, so the contracture is absorbed
+               intra-operatively by definition
+*/
+const FLEX_MODE={ ma:"lever", ama:"lever", rka:"departure", ka:"departure", ika:"gaps" };
+function renderFlexPlan(){
+  const el=document.getElementById("flexplan"); if(!el) return;
+  const f=flexPlan();
+  if(!f || S.flex<=0){ el.innerHTML=""; return; }
+  const mode=FLEX_MODE[S.strat]||"gaps";
+  let cls="w-info", body;
+  if(mode==="lever"){
+    body=t("fp.lever",{d:fmt(f.deg,0),a:fmt(f.trad,0),b:fmt(f.obs)});
+  } else if(mode==="departure"){
+    cls="w-edge";
+    body=t("fp.depart",{d:fmt(f.deg,0),a:fmt(f.trad,0),b:fmt(f.obs)});
+  } else {
+    body=t("fp.gaps",{d:fmt(f.deg,0)});
+  }
+  el.innerHTML='<div class="warnbox '+cls+'">'+esc(body)+'</div>';
+}
 function renderMethod(){
   const el=document.getElementById("methodlist"); if(!el) return;
   el.innerHTML=[
@@ -2652,7 +2895,7 @@ function renderPlan(){
         +esc(t("w.rot",{d:fmt(Math.abs(c.postDiff),0),a:fmt(c.postRot),dir:dir}))+'</div>';
     } else rn.innerHTML="";
   }
-  renderCaseLabel(); renderFlex(); renderCpak(); renderEligibility(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
+  renderCaseLabel(); renderFlex(); renderCpak(); renderEligibility(); renderArthrotomy(); renderStudies(); renderHow(); renderGuide(cuts(S.strat)); renderFlexPlan(); renderCorrection(cuts(S.strat)); renderBone(cuts(S.strat)); renderMethod(); renderTheatre(); renderPatStrip(); renderPatient();
   if(S.view==="ap") drawFigAP(c); else drawFig(c);
   document.getElementById("compseg").style.display = S.view==="ap" ? "flex" : "none";
 }
@@ -3133,6 +3376,10 @@ document.getElementById("btn-apply").addEventListener("click",function(){
 linkSlider("i-hka","r-hka");
 linkSlider("i-slope","r-slope");
 linkSlider("i-flex","r-flex");
+linkSlider("i-bmi","r-bmi");
+linkSlider("i-rom","r-rom");
+["i-prev","i-baja"].forEach(function(id){
+  document.getElementById(id).addEventListener("change",function(){read();render();});});
 
 /* ================= published trials =================
    Randomised comparisons of alignment strategy, with the primary joint
